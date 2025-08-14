@@ -292,7 +292,7 @@ export default function ClinicFinderPage() {
       })
         .bindTooltip(c.name, { direction: "top" })
         .on("click", () => goToClinic(c.id))
-        .addTo(markersRef.current!);
+        .addTo(markersRef.current as L.LayerGroup);
 
       bounds.extend(coords);
     });

@@ -15,6 +15,7 @@ import {
 } from "firebase/firestore";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import type { ClinicDoc } from "@/types/clinic";
 
 type Coords = [number, number];
 
@@ -86,39 +87,45 @@ export default function ClinicDetailsPage() {
     (async () => {
       if (!id) return;
 
-      let data: Clinic | null = null;
+      try {
+        let data: Clinic | null = null;
 
-      // 1) try by document id
-      const byDoc = await getDoc(doc(db, "clinics", String(id)));
-      if (byDoc.exists()) {
-        data = { id: byDoc.id, ...(byDoc.data() as Omit<Clinic, 'id'>) };
-      } else {
-        // 2) try by slug, then by legacy 'id' field
-        const coll = collection(db, "clinics");
-
-        const bySlug = await getDocs(
-          query(coll, where("slug", "==", String(id)), limit(1))
-        );
-        if (!bySlug.empty) {
-          const d = bySlug.docs[0];
-          data = { id: d.id, ...(d.data() as Omit<Clinic, 'id'>) };
+        // 1) try by document id
+        const byDoc = await getDoc(doc(db, "clinics", String(id)));
+        if (byDoc.exists()) {
+          data = { id: byDoc.id, ...(byDoc.data() as Omit<Clinic, 'id'>) };
         } else {
-          const byIdField = await getDocs(
-            query(coll, where("id", "==", String(id)), limit(1))
+          // 2) try by slug, then by legacy 'id' field
+          const coll = collection(db, "clinics");
+
+          const bySlug = await getDocs(
+            query(coll, where("slug", "==", String(id)), limit(1))
           );
-          if (!byIdField.empty) {
-            const d = byIdField.docs[0];
+          if (!bySlug.empty) {
+            const d = bySlug.docs[0];
             data = { id: d.id, ...(d.data() as Omit<Clinic, 'id'>) };
+          } else {
+            const byIdField = await getDocs(
+              query(coll, where("id", "==", String(id)), limit(1))
+            );
+            if (!byIdField.empty) {
+              const d = byIdField.docs[0];
+              data = { id: d.id, ...(d.data() as Omit<Clinic, 'id'>) };
+            }
           }
         }
-      }
 
-      if (!data) {
-        setErr("Clinic not found.");
-      } else {
-        setClinic(data);
+        if (!data) {
+          setErr("Clinic not found.");
+        } else {
+          setClinic(data);
+        }
+      } catch (error) {
+        console.error("Error fetching clinic:", error);
+        setErr("Error loading clinic. Please try again.");
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     })();
   }, [id]);
 
