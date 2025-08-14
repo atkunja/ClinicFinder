@@ -16,8 +16,9 @@ export default function DebugAuth() {
       setStatus("Testing sign-in...");
       await signInWithEmailAndPassword(auth, "test@example.com", "password123");
       setStatus("✅ Sign-in successful!");
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      setError(errorMessage);
       setStatus("❌ Sign-in failed");
       console.error("Auth error:", err);
     }

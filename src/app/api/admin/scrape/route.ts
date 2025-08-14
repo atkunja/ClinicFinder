@@ -47,7 +47,7 @@ function takeMeaningful(text: string): string {
     "website design", "google+"
   ];
 
-  let sliced = text.slice(0, 18000);
+  const sliced = text.slice(0, 18000);
 
   const lines = sliced.split(/(?<=\.)\s+|(?<=\!)\s+|(?<=\?)\s+/);
   const kept = lines.filter((ln) => {

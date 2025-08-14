@@ -42,7 +42,7 @@ export default function LoginPage() {
         const refreshed = await user.getIdTokenResult(true);
         // If admin, go to /admin; otherwise home
         router.replace(refreshed.claims.admin ? "/admin" : "/");
-      } catch (e: any) {
+      } catch {
         // Even if claim fails, take them home (non-admin experience)
         router.replace("/");
       }
@@ -60,8 +60,9 @@ export default function LoginPage() {
         await createUserWithEmailAndPassword(auth, email, pass);
       }
       // onAuthStateChanged above will handle redirect + claim
-    } catch (e: any) {
-      setMsg(e.message || "Error");
+    } catch (e: unknown) {
+      const errorMessage = e instanceof Error ? e.message : "Error";
+      setMsg(errorMessage);
     }
   };
 
@@ -72,8 +73,9 @@ export default function LoginPage() {
       const provider = new GoogleAuthProvider();
       await signInWithPopup(auth, provider);
       // onAuthStateChanged handles the rest
-    } catch (e: any) {
-      setMsg(e.message || "Google sign-in failed");
+    } catch (e: unknown) {
+      const errorMessage = e instanceof Error ? e.message : "Google sign-in failed";
+      setMsg(errorMessage);
     }
   }
 
@@ -85,8 +87,9 @@ export default function LoginPage() {
       provider.addScope("email");
       provider.addScope("name");
       await signInWithPopup(auth, provider);
-    } catch (e: any) {
-      setMsg(e.message || "Apple sign-in failed");
+    } catch (e: unknown) {
+      const errorMessage = e instanceof Error ? e.message : "Apple sign-in failed";
+      setMsg(errorMessage);
     }
   }
 

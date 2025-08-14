@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
+import type { ClinicDoc } from "@/types/clinic";
 
 // Path to your clinics.json
 const DATA_PATH = path.join(process.cwd(), "clinics.json");
@@ -10,7 +11,7 @@ function readClinics() {
   return JSON.parse(file);
 }
 
-function writeClinics(data: any) {
+function writeClinics(data: ClinicDoc[]) {
   fs.writeFileSync(DATA_PATH, JSON.stringify(data, null, 2));
 }
 
@@ -33,7 +34,7 @@ export async function POST(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   const { id } = await req.json();
   const clinics = readClinics();
-  const updated = clinics.filter((c: any) => c.id !== id);
+  const updated = clinics.filter((c: ClinicDoc) => c.id !== id);
   writeClinics(updated);
   return NextResponse.json({ status: "ok" });
 }

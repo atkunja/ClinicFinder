@@ -69,7 +69,7 @@ async function geocode(address: string): Promise<Coords | null> {
 const withinUSLat = (n: number) => n > 24 && n < 50;
 const withinUSLng = (n: number) => n < -66 && n > -125;
 
-function normalizeCoords(anyCoords: any): Coords | null {
+function normalizeCoords(anyCoords: unknown): Coords | null {
   const a = Array.isArray(anyCoords) ? anyCoords : [];
   let lat = Number(a[0]);
   let lng = Number(a[1]);
@@ -109,7 +109,7 @@ function canonicalService(label: string): string {
 }
 
 /** Normalize the services field from Firestore to a clean array of canonical labels */
-function normalizeServices(input: any): string[] {
+function normalizeServices(input: unknown): string[] {
   let arr: string[] = [];
 
   if (Array.isArray(input)) {
@@ -153,10 +153,10 @@ export default function ClinicFinderPage() {
   const [userCoords, setUserCoords] = useState<Coords | null>(null);
   const [showAll, setShowAll] = useState(false);
 
-  const mapRef = useRef<any>(null);
+  const mapRef = useRef<L.Map | null>(null);
   const mapDivRef = useRef<HTMLDivElement | null>(null);
-  const markersRef = useRef<any>(null);
-  const userMarkerRef = useRef<any>(null);
+  const markersRef = useRef<L.LayerGroup | null>(null);
+  const userMarkerRef = useRef<L.CircleMarker | null>(null);
 
   // Dynamically import Leaflet on mount (client only) and init map
   useEffect(() => {
@@ -193,23 +193,25 @@ export default function ClinicFinderPage() {
     const unsub = onSnapshot(collection(db, "clinics"), (snap) => {
       const arr: Clinic[] = [];
       snap.forEach((d) => {
-        const raw = d.data() as any;
+        const raw = d.data() as Record<string, unknown>;
         const coords = normalizeCoords(raw.coords);
         const navId =
-          raw.id || raw.slug || (raw.name ? slugify(raw.name) : d.id) || d.id;
+          (typeof raw.id === 'string' ? raw.id : null) || 
+          (typeof raw.slug === 'string' ? raw.slug : null) || 
+          (typeof raw.name === 'string' ? slugify(raw.name) : d.id) || d.id;
 
         const services = normalizeServices(raw.services);
 
         arr.push({
-          id: navId,
-          name: raw.name,
-          address: raw.address,
-          url: raw.url,
+          id: String(navId),
+          name: String(raw.name || ''),
+          address: String(raw.address || ''),
+          url: String(raw.url || ''),
           services, // canonicalized
           coords: (coords || [0, 0]) as Coords,
-          summary: raw.summary,
-          slug: raw.slug,
-          nameLower: raw.nameLower,
+          summary: typeof raw.summary === 'string' ? raw.summary : undefined,
+          slug: typeof raw.slug === 'string' ? raw.slug : undefined,
+          nameLower: typeof raw.nameLower === 'string' ? raw.nameLower : undefined,
         });
       });
       setAllClinics(arr);
@@ -288,14 +290,14 @@ export default function ClinicFinderPage() {
         fillColor: col,
         fillOpacity: 0.85,
       })
-        .bindTooltip(c.name, { direction: "top" } as any)
+        .bindTooltip(c.name, { direction: "top" })
         .on("click", () => goToClinic(c.id))
-        .addTo(markersRef.current);
+        .addTo(markersRef.current!);
 
-      bounds.extend(coords as any);
+      bounds.extend(coords);
     });
 
-    if (userCoords) bounds.extend(userCoords as any);
+    if (userCoords) bounds.extend(userCoords);
     if (bounds.isValid()) mapRef.current!.fitBounds(bounds.pad(0.1));
   }
 

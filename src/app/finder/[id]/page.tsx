@@ -3,7 +3,6 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
 import { db } from "@/lib/firebase";
 import {
   doc,
@@ -25,7 +24,7 @@ interface Clinic {
   address: string;
   url: string;
   services: string[] | string; // legacy can be string like '["Medical"]'
-  coords: Coords | any;        // legacy can be [lng, lat] or strings
+  coords: Coords | [string, string] | { lat: number | string; lng: number | string } | unknown; // legacy formats
   summary?: string;
   slug?: string;
 }
@@ -34,15 +33,16 @@ const SS_KEY = "FINDER_STATE_V1";
 const withinUSLat = (n: number) => n > 24 && n < 50;
 const withinUSLng = (n: number) => n < -66 && n > -125;
 
-function normalizeCoords(anyCoords: any): Coords | null {
+function normalizeCoords(anyCoords: unknown): Coords | null {
   const a = Array.isArray(anyCoords) ? anyCoords : [];
   let lat = Number(a[0]);
   let lng = Number(a[1]);
 
   // handle {lat, lng} objects too
   if (!Array.isArray(anyCoords) && anyCoords && typeof anyCoords === "object") {
-    lat = Number(anyCoords.lat ?? anyCoords[0]);
-    lng = Number(anyCoords.lng ?? anyCoords[1]);
+    const obj = anyCoords as Record<string, unknown>;
+    lat = Number(obj.lat ?? obj[0]);
+    lng = Number(obj.lng ?? obj[1]);
   }
 
   if (Number.isNaN(lat) || Number.isNaN(lng)) return null;
@@ -91,7 +91,7 @@ export default function ClinicDetailsPage() {
       // 1) try by document id
       const byDoc = await getDoc(doc(db, "clinics", String(id)));
       if (byDoc.exists()) {
-        data = { id: byDoc.id, ...(byDoc.data() as any) };
+        data = { id: byDoc.id, ...(byDoc.data() as Omit<Clinic, 'id'>) };
       } else {
         // 2) try by slug, then by legacy 'id' field
         const coll = collection(db, "clinics");
@@ -101,14 +101,14 @@ export default function ClinicDetailsPage() {
         );
         if (!bySlug.empty) {
           const d = bySlug.docs[0];
-          data = { id: d.id, ...(d.data() as any) };
+          data = { id: d.id, ...(d.data() as Omit<Clinic, 'id'>) };
         } else {
           const byIdField = await getDocs(
             query(coll, where("id", "==", String(id)), limit(1))
           );
           if (!byIdField.empty) {
             const d = byIdField.docs[0];
-            data = { id: d.id, ...(d.data() as any) };
+            data = { id: d.id, ...(d.data() as Omit<Clinic, 'id'>) };
           }
         }
       }

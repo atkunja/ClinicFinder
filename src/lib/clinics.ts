@@ -25,7 +25,7 @@ export async function getClinicByIdOrSlug(idOrSlug: string): Promise<Clinic> {
   // 1) Try by document ID
   const byId = await getDoc(doc(db, "clinics", idOrSlug));
   if (byId.exists()) {
-    return { id: byId.id, ...(byId.data() as any) } as Clinic;
+    return { id: byId.id, ...(byId.data() as Omit<Clinic, 'id'>) } as Clinic;
   }
 
   // 2) Try by slug
@@ -37,7 +37,7 @@ export async function getClinicByIdOrSlug(idOrSlug: string): Promise<Clinic> {
   const qs = await getDocs(q);
   if (!qs.empty) {
     const d = qs.docs[0];
-    return { id: d.id, ...(d.data() as any) } as Clinic;
+    return { id: d.id, ...(d.data() as Omit<Clinic, 'id'>) } as Clinic;
   }
 
   throw new Error("Clinic not found");
