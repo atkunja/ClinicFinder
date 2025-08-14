@@ -3,7 +3,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { db } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase";
+import { onAuthStateChanged, getIdToken } from "firebase/auth";
 import {
   collection,
   getDocs,
@@ -31,6 +32,7 @@ type ClinicRow = {
 
 const CLINICS = collection(db, "clinics");
 
+// ----------------- helpers -----------------
 function slugify(s: string) {
   return s
     .toLowerCase()
@@ -67,8 +69,10 @@ async function geocodeAddress(address: string): Promise<[number, number] | null>
     return null;
   }
 }
+// -------------------------------------------
 
 export default function AdminPage() {
+  const [ok, setOk] = useState<boolean | null>(null); // guard access
   const [rows, setRows] = useState<ClinicRow[]>([]);
   const [editing, setEditing] = useState<ClinicRow | null>(null);
   const [form, setForm] = useState<ClinicRow>({
@@ -84,8 +88,34 @@ export default function AdminPage() {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
 
+  // ---------- auth guard: ensure admin ----------
+  useEffect(() => {
+    return onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        setOk(false);
+        if (typeof window !== "undefined") window.location.href = "/login";
+        return;
+      }
+      const idToken = await getIdToken(user, true);
+      const res = await fetch("/api/auth/ensure-admin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ idToken }),
+      });
+      const data = await res.json();
+      if (!data?.admin) {
+        setOk(false);
+        if (typeof window !== "undefined") window.location.href = "/login";
+        return;
+      }
+      setOk(true);
+    });
+  }, []);
+  // ---------------------------------------------
+
   // Load clinics
   useEffect(() => {
+    if (!ok) return;
     (async () => {
       const snap = await getDocs(CLINICS);
       const list: ClinicRow[] = [];
@@ -115,7 +145,7 @@ export default function AdminPage() {
       });
       setRows(list.sort((a, b) => a.name.localeCompare(b.name)));
     })();
-  }, []);
+  }, [ok]);
 
   function setField<K extends keyof ClinicRow>(key: K, val: ClinicRow[K]) {
     setForm((prev) => ({ ...prev, [key]: val }));
@@ -238,6 +268,10 @@ export default function AdminPage() {
     if (editing?.docId === docId) startAdd();
   }
 
+  if (ok === null) {
+    return <div className="p-8 text-black">Checking access…</div>;
+  }
+
   return (
     <div className="max-w-5xl mx-auto p-6 text-black">
       <div className="flex items-center justify-between mb-4">
@@ -351,7 +385,7 @@ export default function AdminPage() {
           </thead>
           <tbody>
             {rows.map((r) => (
-              <tr key={r.docId} className="border-b">{/* unique key by docId */}
+              <tr key={r.docId} className="border-b">
                 <td className="px-3 py-2">{r.name}</td>
                 <td className="px-3 py-2">{r.address}</td>
                 <td className="px-3 py-2">{r.services.join(", ")}</td>
@@ -362,12 +396,12 @@ export default function AdminPage() {
                   <button className="px-2 py-1 border rounded" onClick={() => startEdit(r)}>
                     Edit
                   </button>
-                  <a className="px-2 py-1 border rounded" href={r.url} target="_blank">
+                  <a className="px-2 py-1 border rounded" href={r.url} target="_blank" rel="noreferrer">
                     Website
                   </a>
                   <button
                     className="px-2 py-1 border rounded text-red-600"
-                    onClick={() => handleDelete(r.docId)} // delete by docId
+                    onClick={() => handleDelete(r.docId)}
                   >
                     Delete
                   </button>

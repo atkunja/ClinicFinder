@@ -4,7 +4,9 @@ import { adminAuth } from "@/lib/firebaseAdmin";
 export async function POST(req: NextRequest) {
   try {
     const { idToken } = await req.json();
-    if (!idToken) return NextResponse.json({ error: "Missing token" }, { status: 400 });
+    if (!idToken) {
+      return NextResponse.json({ error: "Missing token" }, { status: 400 });
+    }
 
     const decoded = await adminAuth.verifyIdToken(idToken);
     const email = decoded.email?.toLowerCase() || "";
@@ -15,13 +17,17 @@ export async function POST(req: NextRequest) {
       .filter(Boolean);
 
     const isAllowed = allow.includes(email);
-    if (!isAllowed) return NextResponse.json({ admin: false }, { status: 200 });
+    if (!isAllowed) {
+      return NextResponse.json({ admin: false });
+    }
 
+    // Set custom claim if not already set
     if (!decoded.admin) {
       await adminAuth.setCustomUserClaims(decoded.uid, { admin: true });
     }
+
     return NextResponse.json({ admin: true });
-  } catch {
+  } catch (e) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 }
