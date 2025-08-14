@@ -1,52 +1,63 @@
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
-
+// src/app/api/admin/clinics/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { adminAuth, adminDb } from "@/lib/firebaseAdmin";
+import { adminDb } from "@/lib/firebaseAdmin";
+import type { ClinicDoc } from "@/types/clinic";
 
-async function requireAdmin(req: NextRequest) {
-  const auth = req.headers.get("authorization") || "";
-  const token = auth.startsWith("Bearer ") ? auth.slice(7) : "";
-  if (!token) throw new Error("Missing token");
-  const decoded = await adminAuth.verifyIdToken(token, true);
-  if (!decoded.admin) throw new Error("Forbidden");
-  return decoded.uid;
+function ok<T>(data: T, init?: number) {
+  return NextResponse.json(data, { status: init ?? 200 });
+}
+function bad(message: string, code = 400) {
+  return NextResponse.json({ error: message }, { status: code });
 }
 
-export async function GET(req: NextRequest) {
-  try {
-    await requireAdmin(req);
-    const snap = await adminDb.collection("clinics").get();
-    const clinics = snap.docs.map((d) => d.data());
-    return NextResponse.json({ clinics });
-  } catch (e: any) {
-    return NextResponse.json({ error: e.message || "Unauthorized" }, { status: 401 });
-  }
+// GET /api/admin/clinics -> list all
+export async function GET() {
+  const snap = await adminDb.collection("clinics").get();
+  const rows: (ClinicDoc & { docId: string })[] = snap.docs.map((d) => {
+    const data = d.data() as ClinicDoc;
+    return { ...data, docId: d.id };
+    });
+  return ok(rows);
 }
 
+// POST /api/admin/clinics -> upsert one clinic (doc id = payload.id)
 export async function POST(req: NextRequest) {
-  try {
-    await requireAdmin(req);
-    const body = await req.json();
-    const { id, name, address, services, url, coords } = body || {};
-    if (!id || !name || !address || !url || !Array.isArray(services) || !Array.isArray(coords)) {
-      return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
-    }
-    await adminDb.collection("clinics").doc(id).set({ id, name, address, services, url, coords });
-    return NextResponse.json({ ok: true });
-  } catch (e: any) {
-    return NextResponse.json({ error: e.message || "Unauthorized" }, { status: 401 });
+  const payload = (await req.json()) as Partial<ClinicDoc>;
+  if (!payload?.id) return bad("Missing id");
+  if (!payload.name || !payload.address || !payload.url) {
+    return bad("Missing required fields (name, address, url)");
   }
+  if (
+    !Array.isArray(payload.coords) ||
+    payload.coords.length !== 2 ||
+    typeof payload.coords[0] !== "number" ||
+    typeof payload.coords[1] !== "number"
+  ) {
+    return bad("Invalid coords");
+  }
+
+  const docRef = adminDb.collection("clinics").doc(payload.id);
+  const data: ClinicDoc = {
+    id: payload.id,
+    name: payload.name,
+    address: payload.address,
+    url: payload.url,
+    services: Array.isArray(payload.services) ? payload.services : [],
+    coords: payload.coords as [number, number],
+    summary: payload.summary ?? "",
+    slug: payload.slug ?? payload.id,
+    nameLower: payload.name.toLowerCase(),
+  };
+
+  await docRef.set(data, { merge: true });
+  return ok({ ok: true });
 }
 
+// DELETE /api/admin/clinics?id=docId
 export async function DELETE(req: NextRequest) {
-  try {
-    await requireAdmin(req);
-    const id = new URL(req.url).searchParams.get("id");
-    if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
-    await adminDb.collection("clinics").doc(id).delete();
-    return NextResponse.json({ ok: true });
-  } catch (e: any) {
-    return NextResponse.json({ error: e.message || "Unauthorized" }, { status: 401 });
-  }
+  const { searchParams } = new URL(req.url);
+  const id = searchParams.get("id");
+  if (!id) return bad("Missing id");
+  await adminDb.collection("clinics").doc(id).delete();
+  return ok({ ok: true });
 }

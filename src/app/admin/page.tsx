@@ -11,29 +11,15 @@ import {
   deleteDoc,
   setDoc,
   doc,
+  QueryDocumentSnapshot,
+  DocumentData,
 } from "firebase/firestore";
-
-type ClinicRow = {
-  // Firestore document id (always unique) – used for React keys and deletes
-  docId: string;
-
-  // User-facing id/slug saved in the doc (can collide across docs)
-  id: string;
-
-  name: string;
-  address: string;
-  url: string;
-  services: string[];
-  coords: [number, number];
-  summary?: string;
-  slug?: string;
-  nameLower?: string;
-};
+import type { ClinicDoc, ClinicRow, Coords } from "@/types/clinic";
 
 const CLINICS = collection(db, "clinics");
 
 // ----------------- helpers -----------------
-function slugify(s: string) {
+function slugify(s: string): string {
   return s
     .toLowerCase()
     .trim()
@@ -41,7 +27,7 @@ function slugify(s: string) {
     .replace(/^-+|-+$/g, "");
 }
 
-function fixCoords(latRaw: any, lngRaw: any): [number, number] | null {
+function fixCoords(latRaw: unknown, lngRaw: unknown): Coords | null {
   const lat = Number(latRaw);
   const lng = Number(lngRaw);
   if (Number.isNaN(lat) || Number.isNaN(lng)) return null;
@@ -53,7 +39,7 @@ function fixCoords(latRaw: any, lngRaw: any): [number, number] | null {
   return [L, G];
 }
 
-async function geocodeAddress(address: string): Promise<[number, number] | null> {
+async function geocodeAddress(address: string): Promise<Coords | null> {
   if (!address?.trim()) return null;
   try {
     const res = await fetch(
@@ -62,12 +48,44 @@ async function geocodeAddress(address: string): Promise<[number, number] | null>
       )}`,
       { headers: { Accept: "application/json" } }
     );
-    const data: Array<{ lat: string; lon: string }> = await res.json();
+    type NomRow = { lat: string; lon: string };
+    const data: NomRow[] = (await res.json()) as NomRow[];
     if (!Array.isArray(data) || data.length === 0) return null;
     return fixCoords(data[0].lat, data[0].lon);
   } catch {
     return null;
   }
+}
+
+function toRow(d: QueryDocumentSnapshot<DocumentData>): ClinicRow {
+  const data = d.data() as Partial<ClinicDoc> & {
+    coords?: Coords;
+    lat?: number;
+    lng?: number;
+  };
+
+  const fixed = fixCoords(
+    data?.coords?.[0] ?? data?.lat,
+    data?.coords?.[1] ?? data?.lng
+  );
+
+  return {
+    docId: d.id,
+    id: (data.id ?? d.id) as string,
+    name: data.name ?? "",
+    address: data.address ?? "",
+    url: data.url ?? "",
+    services: Array.isArray(data.services)
+      ? (data.services as string[])
+      : String(data.services ?? "")
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean),
+    coords: (fixed ?? [0, 0]) as Coords,
+    summary: data.summary ?? "",
+    slug: data.slug,
+    nameLower: data.nameLower,
+  };
 }
 // -------------------------------------------
 
@@ -102,7 +120,7 @@ export default function AdminPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ idToken }),
       });
-      const data = await res.json();
+      const data = (await res.json()) as { admin?: boolean };
       if (!data?.admin) {
         setOk(false);
         if (typeof window !== "undefined") window.location.href = "/login";
@@ -120,28 +138,7 @@ export default function AdminPage() {
       const snap = await getDocs(CLINICS);
       const list: ClinicRow[] = [];
       snap.forEach((d) => {
-        const data = d.data() as any;
-        const fixed = fixCoords(
-          data?.coords?.[0] ?? data?.lat,
-          data?.coords?.[1] ?? data?.lng
-        );
-        list.push({
-          docId: d.id,                        // <- unique
-          id: data.id ?? d.id,                // <- user-facing id/slug stored in doc
-          name: data.name ?? "",
-          address: data.address ?? "",
-          url: data.url ?? "",
-          services: Array.isArray(data.services)
-            ? data.services
-            : String(data.services ?? "")
-                .split(",")
-                .map((s) => s.trim())
-                .filter(Boolean),
-          coords: fixed ?? [0, 0],
-          summary: data.summary ?? "",
-          slug: data.slug,
-          nameLower: data.nameLower,
-        });
+        list.push(toRow(d));
       });
       setRows(list.sort((a, b) => a.name.localeCompare(b.name)));
     })();
@@ -204,8 +201,8 @@ export default function AdminPage() {
       const id = latest.id?.trim() || slugify(latest.name);
       if (!id) throw new Error("Please enter a name.");
 
-      const payload = {
-        id, // keep user-facing id/slug in the doc
+      const payload: ClinicDoc = {
+        id,
         name: latest.name,
         address: latest.address,
         url: latest.url,
@@ -219,7 +216,6 @@ export default function AdminPage() {
       // If editing an existing doc, write back to that docId.
       // If creating new, use "id" as the document id (recommended).
       const targetDocId = editing?.docId || id;
-
       await setDoc(doc(CLINICS, targetDocId), payload);
 
       setMsg("Saved!");
@@ -227,8 +223,9 @@ export default function AdminPage() {
         ...payload,
         docId: targetDocId,
       });
-    } catch (e: any) {
-      setMsg(e?.message || "Save failed");
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : "Save failed";
+      setMsg(message);
     } finally {
       setBusy(false);
     }
@@ -248,14 +245,15 @@ export default function AdminPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url }),
       });
-      const payload = await res.json();
+      const payload = (await res.json()) as { text?: string; error?: string };
       if (!res.ok) throw new Error(payload?.error || "Scrape failed");
       const text = String(payload?.text ?? "").trim();
       if (!text) throw new Error("No content found on that page.");
       setField("summary", text);
       setMsg("Summary fetched. Review and click Save Clinic.");
-    } catch (e: any) {
-      setMsg(e?.message || "Summary failed");
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : "Summary failed";
+      setMsg(message);
     } finally {
       setBusy(false);
     }
