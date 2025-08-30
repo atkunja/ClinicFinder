@@ -1,4 +1,3 @@
-// src/app/finder/results.tsx
 "use client";
 
 import { useEffect, useRef } from "react";
@@ -16,7 +15,7 @@ export type Clinic = {
   summary?: string;
   slug?: string;
   verified?: boolean;
-  miles?: number; // optional: parent can add
+  miles?: number;
 };
 
 type Props = { clinics: Clinic[] };
@@ -25,26 +24,20 @@ export default function Results({ clinics }: Props) {
   const mapRef = useRef<any>(null);
   const groupRef = useRef<any>(null);
 
-  // Initialize the map once
   useEffect(() => {
     let mounted = true;
-
     (async () => {
       const L = (await import("leaflet")).default;
 
-      // Ensure marker icons work on Vercel (no webpacked image URLs)
+      // ensure marker icons load on Vercel
       // @ts-ignore
       delete (L.Icon.Default.prototype as any)._getIconUrl;
       L.Icon.Default.mergeOptions({
-        iconUrl:
-          "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-        iconRetinaUrl:
-          "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
-        shadowUrl:
-          "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+        iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+        iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+        shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
       });
 
-      // Kill any previous instance (hot reload/navigations)
       if (mapRef.current) {
         try { mapRef.current.remove(); } catch {}
         mapRef.current = null;
@@ -53,44 +46,25 @@ export default function Results({ clinics }: Props) {
       const el = document.getElementById("finder-map");
       if (!mounted || !el) return;
 
-      // Delay to ensure layout is settled, then init + invalidate size
-      const start = () => {
-        const map = L.map(el, {
-          center: [42.2808, -83.743], // fallback center (Ann Arbor-ish)
-          zoom: 11,
-          scrollWheelZoom: true,
-        });
+      const map = L.map(el, { center: [42.2808, -83.743], zoom: 11, scrollWheelZoom: true });
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 19,
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+      }).addTo(map);
 
-        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-          maxZoom: 19,
-          attribution:
-            '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-        }).addTo(map);
+      const group = L.layerGroup().addTo(map);
+      mapRef.current = map;
+      groupRef.current = group;
 
-        const group = L.layerGroup().addTo(map);
-
-        mapRef.current = map;
-        groupRef.current = group;
-
-        // Invalidate after first paint so tiles show up if container was zero-sized
-        requestAnimationFrame(() => map.invalidateSize());
-        // Also on resize
-        const onResize = () => map.invalidateSize();
-        window.addEventListener("resize", onResize);
-        // Store for cleanup
-        (map as any).__onResize = onResize;
-      };
-
-      // One tick delay helps in some hydration/layout cases
-      setTimeout(start, 0);
+      requestAnimationFrame(() => map.invalidateSize());
+      const onResize = () => map.invalidateSize();
+      window.addEventListener("resize", onResize);
+      (map as any).__onResize = onResize;
     })();
 
     return () => {
-      mounted = false;
       const map = mapRef.current as any;
-      if (map && map.__onResize) {
-        window.removeEventListener("resize", map.__onResize);
-      }
+      if (map && map.__onResize) window.removeEventListener("resize", map.__onResize);
       if (mapRef.current) {
         try { mapRef.current.remove(); } catch {}
         mapRef.current = null;
@@ -99,7 +73,6 @@ export default function Results({ clinics }: Props) {
     };
   }, []);
 
-  // Update markers when clinics change
   useEffect(() => {
     (async () => {
       const L = (await import("leaflet")).default;
@@ -113,7 +86,6 @@ export default function Results({ clinics }: Props) {
       clinics.forEach((c) => {
         const [lat, lng] = c.coords || [];
         if (typeof lat !== "number" || typeof lng !== "number") return;
-
         const marker = L.marker([lat, lng]).bindPopup(
           `<strong>${escapeHtml(c.name)}</strong><br/>${escapeHtml(c.address || "")}`
         );
@@ -123,7 +95,6 @@ export default function Results({ clinics }: Props) {
 
       if (clinics.length > 0) {
         map.fitBounds(bounds.pad(0.2));
-        // Extra invalidate to fix rare blank tile grids
         setTimeout(() => map.invalidateSize(), 0);
       }
     })();
@@ -131,16 +102,10 @@ export default function Results({ clinics }: Props) {
 
   return (
     <section className="max-w-5xl mx-auto px-4 pb-10">
-      {/* Map */}
       <div className="rounded-lg border bg-white">
-        <div
-          id="finder-map"
-          className="w-full h-[520px]"
-          aria-label="Map with nearby clinics"
-        />
+        <div id="finder-map" className="w-full h-[520px]" aria-label="Map with nearby clinics" />
       </div>
 
-      {/* List */}
       <div className="mt-6 bg-white text-black rounded-lg border p-4">
         <h2 className="text-lg font-semibold mb-3">Nearest clinics</h2>
 
@@ -154,9 +119,7 @@ export default function Results({ clinics }: Props) {
                   <div className="text-base font-semibold">
                     {clinic.name}
                     {typeof clinic.miles === "number" && isFinite(clinic.miles) && (
-                      <span className="ml-2 text-xs text-gray-600">
-                        {clinic.miles.toFixed(1)} mi
-                      </span>
+                      <span className="ml-2 text-xs text-gray-600">{clinic.miles.toFixed(1)} mi</span>
                     )}
                     {clinic.verified && (
                       <span className="ml-2 text-xs px-2 py-0.5 rounded bg-emerald-100 text-emerald-800">
@@ -167,25 +130,17 @@ export default function Results({ clinics }: Props) {
                   <div className="text-xs text-gray-700 mt-1">{clinic.address}</div>
                   {clinic.services?.length > 0 && (
                     <div className="mt-1 text-xs">
-                      <span className="font-medium">Services:</span>{" "}
-                      {clinic.services.join(", ")}
+                      <span className="font-medium">Services:</span> {clinic.services.join(", ")}
                     </div>
                   )}
                 </div>
 
                 <div className="flex gap-2 shrink-0">
-                  <Link
-                    href={`/finder/${clinic.slug ?? clinic.id}`}
-                    className="text-xs px-2 py-1 border rounded hover:bg-gray-50"
-                  >
+                  <Link href={`/finder/${clinic.slug ?? clinic.id}`} className="text-xs px-2 py-1 border rounded hover:bg-gray-50">
                     View details →
                   </Link>
                   {clinic.url && (
-                    <a
-                      href={clinic.url}
-                      target="_blank"
-                      className="text-xs px-2 py-1 border rounded hover:bg-gray-50"
-                    >
+                    <a href={clinic.url} target="_blank" className="text-xs px-2 py-1 border rounded hover:bg-gray-50">
                       Website
                     </a>
                   )}
@@ -193,9 +148,7 @@ export default function Results({ clinics }: Props) {
               </div>
 
               {clinic.summary && (
-                <p className="text-xs text-gray-800 mt-2 line-clamp-2">
-                  {clinic.summary}
-                </p>
+                <p className="text-xs text-gray-800 mt-2 line-clamp-2">{clinic.summary}</p>
               )}
             </div>
           ))}

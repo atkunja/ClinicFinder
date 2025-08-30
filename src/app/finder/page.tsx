@@ -1,11 +1,7 @@
-// src/app/finder/page.tsx
-import "leaflet/dist/leaflet.css";
 "use client";
 
 import { useEffect, useState } from "react";
 import "leaflet/dist/leaflet.css";
-import { db } from "@/lib/firebase";
-import { collection, onSnapshot } from "firebase/firestore";
 import Results from "./results";
 
 type Coords = [number, number];
@@ -23,11 +19,11 @@ function haversineKm(a: Coords, b: Coords) {
   return R * c;
 }
 
-interface Clinic {
+export type Clinic = {
   id: string;
   name: string;
   address: string;
-  url: string;
+  url?: string;
   services: string[];
   coords: Coords;
   summary?: string;
@@ -35,44 +31,52 @@ interface Clinic {
   verified?: boolean;
   languages?: string[];
   eligibility?: string[];
-}
+};
 
 export default function FinderPage() {
   const [clinics, setClinics] = useState<Clinic[]>([]);
   const [serviceFilter, setServiceFilter] = useState("");
   const [onlyVerified, setOnlyVerified] = useState(false);
   const [userCoords, setUserCoords] = useState<Coords | null>(null);
+  const [err, setErr] = useState<string | null>(null);
 
+  // Fetch from server API (works regardless of Firestore rules)
   useEffect(() => {
-    const q = collection(db, "clinics");
-    return onSnapshot(q, (snap) => {
-      const rows: Clinic[] = snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) }));
-      setClinics(rows);
-    });
+    let on = true;
+    (async () => {
+      try {
+        setErr(null);
+        const res = await fetch("/api/clinics", { cache: "no-store" });
+        if (!res.ok) throw new Error(`Failed to load clinics (${res.status})`);
+        const data = (await res.json()) as Clinic[];
+        if (on) setClinics(Array.isArray(data) ? data : []);
+      } catch (e: any) {
+        if (on) setErr(e?.message ?? "Failed to load clinics");
+      }
+    })();
+    return () => { on = false; };
   }, []);
 
   function useMyLocation() {
     if (!navigator.geolocation) return alert("Geolocation not supported");
     navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setUserCoords([pos.coords.latitude, pos.coords.longitude]);
-      },
+      (pos) => setUserCoords([pos.coords.latitude, pos.coords.longitude]),
       () => alert("Couldn't get your location")
     );
   }
 
   const visibleClinics = clinics
-    .filter((c) =>
+    .filter(c =>
       serviceFilter
-        ? c.services.some((s) => s.toLowerCase().includes(serviceFilter.toLowerCase()))
+        ? c.services?.some(s => s.toLowerCase().includes(serviceFilter.toLowerCase()))
         : true
     )
-    .filter((c) => (onlyVerified ? c.verified : true))
-    .map((c) => {
-      let dist = userCoords ? haversineKm(userCoords, c.coords) : Infinity;
-      return { ...c, miles: dist * 0.621 };
+    .filter(c => (onlyVerified ? c.verified : true))
+    .map(c => {
+      const distKm = userCoords ? haversineKm(userCoords, c.coords) : Infinity;
+      return { ...c, miles: isFinite(distKm) ? distKm * 0.621 : Infinity };
     })
-    .sort((a, b) => a.miles - b.miles);
+    .sort((a, b) => (a.miles as number) - (b.miles as number));
 
   return (
     <div className="min-h-screen">
@@ -84,7 +88,11 @@ export default function FinderPage() {
           placeholder="Filter by service (e.g., dental, pediatrics)"
         />
         <label className="inline-flex items-center gap-2">
-          <input type="checkbox" checked={onlyVerified} onChange={() => setOnlyVerified(!onlyVerified)} />
+          <input
+            type="checkbox"
+            checked={onlyVerified}
+            onChange={() => setOnlyVerified(!onlyVerified)}
+          />
           Show verified only
         </label>
         <button
@@ -95,7 +103,13 @@ export default function FinderPage() {
         </button>
       </div>
 
-      <Results clinics={visibleClinics} />
+      {err && (
+        <div className="max-w-5xl mx-auto px-4 mb-2 text-sm text-red-700">
+          {err}
+        </div>
+      )}
+
+      <Results clinics={visibleClinics as any} />
     </div>
   );
 }
