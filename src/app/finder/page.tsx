@@ -1,4 +1,5 @@
 // src/app/finder/page.tsx
+import "leaflet/dist/leaflet.css";
 "use client";
 
 import { useEffect, useState } from "react";

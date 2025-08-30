@@ -27,3 +27,10 @@ body {
 .leaflet-control-attribution {
   display: none !important;
 }
+
+/* Ensure Leaflet containers render correctly */
+.leaflet-container {
+  height: 100%;
+  width: 100%;
+  z-index: 0;
+}
