@@ -22,9 +22,9 @@ type Props = { clinics: Clinic[] };
 
 export default function Results({ clinics }: Props) {
   const mapRef = useRef<any>(null);
-  const groupRef = useRef<any>(null);
+  const layerRef = useRef<any>(null);
 
-  // init once
+  // Initialize map once
   useEffect(() => {
     let mounted = true;
     (async () => {
@@ -41,10 +41,9 @@ export default function Results({ clinics }: Props) {
           "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
       });
 
+      // remove any previous instance (hot reload/nav)
       if (mapRef.current) {
-        try {
-          mapRef.current.remove();
-        } catch {}
+        try { mapRef.current.remove(); } catch {}
         mapRef.current = null;
       }
 
@@ -52,10 +51,11 @@ export default function Results({ clinics }: Props) {
       if (!mounted || !el) return;
 
       const map = L.map(el, {
-        center: [42.2808, -83.743],
+        center: [42.2808, -83.743], // fallback center
         zoom: 11,
         scrollWheelZoom: true,
       });
+
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
         maxZoom: 19,
         attribution:
@@ -64,8 +64,9 @@ export default function Results({ clinics }: Props) {
 
       const group = L.layerGroup().addTo(map);
       mapRef.current = map;
-      groupRef.current = group;
+      layerRef.current = group;
 
+      // make sure tiles display if container size changes
       requestAnimationFrame(() => map.invalidateSize());
       const onResize = () => map.invalidateSize();
       window.addEventListener("resize", onResize);
@@ -74,21 +75,21 @@ export default function Results({ clinics }: Props) {
 
     return () => {
       const map = mapRef.current as any;
-      if (map && map.__onResize) window.removeEventListener("resize", map.__onResize);
+      if (map?.__onResize) window.removeEventListener("resize", map.__onResize);
       if (mapRef.current) {
         try { mapRef.current.remove(); } catch {}
         mapRef.current = null;
       }
-      groupRef.current = null;
+      layerRef.current = null;
     };
   }, []);
 
-  // markers on change
+  // Draw markers when clinics change
   useEffect(() => {
     (async () => {
       const L = (await import("leaflet")).default;
       const map = mapRef.current as any;
-      const group = groupRef.current as any;
+      const group = layerRef.current as any;
       if (!map || !group) return;
 
       group.clearLayers();
@@ -116,11 +117,13 @@ export default function Results({ clinics }: Props) {
 
   return (
     <section className="max-w-5xl mx-auto px-4 pb-10">
-      <div className="rounded-lg border bg-white">
+      {/* MAP */}
+      <div className="rounded-lg border bg-white mb-6">
         <div id="finder-map" className="w-full h-[520px]" aria-label="Map" />
       </div>
 
-      <div className="mt-6 bg-white text-black rounded-lg border p-4">
+      {/* LIST */}
+      <div className="bg-white text-black rounded-lg border p-4">
         <h2 className="text-lg font-semibold mb-3">Nearest clinics</h2>
 
         {clinics.length === 0 && <div className="text-gray-600">No clinics found.</div>}
