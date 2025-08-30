@@ -24,6 +24,7 @@ export default function Results({ clinics }: Props) {
   const mapRef = useRef<any>(null);
   const groupRef = useRef<any>(null);
 
+  // init once
   useEffect(() => {
     let mounted = true;
     (async () => {
@@ -34,22 +35,31 @@ export default function Results({ clinics }: Props) {
       delete (L.Icon.Default.prototype as any)._getIconUrl;
       L.Icon.Default.mergeOptions({
         iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-        iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
-        shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+        iconRetinaUrl:
+          "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+        shadowUrl:
+          "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
       });
 
       if (mapRef.current) {
-        try { mapRef.current.remove(); } catch {}
+        try {
+          mapRef.current.remove();
+        } catch {}
         mapRef.current = null;
       }
 
       const el = document.getElementById("finder-map");
       if (!mounted || !el) return;
 
-      const map = L.map(el, { center: [42.2808, -83.743], zoom: 11, scrollWheelZoom: true });
+      const map = L.map(el, {
+        center: [42.2808, -83.743],
+        zoom: 11,
+        scrollWheelZoom: true,
+      });
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
         maxZoom: 19,
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+        attribution:
+          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
       }).addTo(map);
 
       const group = L.layerGroup().addTo(map);
@@ -73,6 +83,7 @@ export default function Results({ clinics }: Props) {
     };
   }, []);
 
+  // markers on change
   useEffect(() => {
     (async () => {
       const L = (await import("leaflet")).default;
@@ -86,10 +97,13 @@ export default function Results({ clinics }: Props) {
       clinics.forEach((c) => {
         const [lat, lng] = c.coords || [];
         if (typeof lat !== "number" || typeof lng !== "number") return;
-        const marker = L.marker([lat, lng]).bindPopup(
-          `<strong>${escapeHtml(c.name)}</strong><br/>${escapeHtml(c.address || "")}`
-        );
-        marker.addTo(group);
+        L.marker([lat, lng])
+          .bindPopup(
+            `<strong>${escapeHtml(c.name)}</strong><br/>${escapeHtml(
+              c.address || ""
+            )}`
+          )
+          .addTo(group);
         bounds.extend([lat, lng]);
       });
 
@@ -103,7 +117,7 @@ export default function Results({ clinics }: Props) {
   return (
     <section className="max-w-5xl mx-auto px-4 pb-10">
       <div className="rounded-lg border bg-white">
-        <div id="finder-map" className="w-full h-[520px]" aria-label="Map with nearby clinics" />
+        <div id="finder-map" className="w-full h-[520px]" aria-label="Map" />
       </div>
 
       <div className="mt-6 bg-white text-black rounded-lg border p-4">
@@ -119,7 +133,9 @@ export default function Results({ clinics }: Props) {
                   <div className="text-base font-semibold">
                     {clinic.name}
                     {typeof clinic.miles === "number" && isFinite(clinic.miles) && (
-                      <span className="ml-2 text-xs text-gray-600">{clinic.miles.toFixed(1)} mi</span>
+                      <span className="ml-2 text-xs text-gray-600">
+                        {clinic.miles.toFixed(1)} mi
+                      </span>
                     )}
                     {clinic.verified && (
                       <span className="ml-2 text-xs px-2 py-0.5 rounded bg-emerald-100 text-emerald-800">
@@ -130,17 +146,25 @@ export default function Results({ clinics }: Props) {
                   <div className="text-xs text-gray-700 mt-1">{clinic.address}</div>
                   {clinic.services?.length > 0 && (
                     <div className="mt-1 text-xs">
-                      <span className="font-medium">Services:</span> {clinic.services.join(", ")}
+                      <span className="font-medium">Services:</span>{" "}
+                      {clinic.services.join(", ")}
                     </div>
                   )}
                 </div>
 
                 <div className="flex gap-2 shrink-0">
-                  <Link href={`/finder/${clinic.slug ?? clinic.id}`} className="text-xs px-2 py-1 border rounded hover:bg-gray-50">
+                  <Link
+                    href={`/finder/${clinic.slug ?? clinic.id}`}
+                    className="text-xs px-2 py-1 border rounded hover:bg-gray-50"
+                  >
                     View details →
                   </Link>
                   {clinic.url && (
-                    <a href={clinic.url} target="_blank" className="text-xs px-2 py-1 border rounded hover:bg-gray-50">
+                    <a
+                      href={clinic.url}
+                      target="_blank"
+                      className="text-xs px-2 py-1 border rounded hover:bg-gray-50"
+                    >
                       Website
                     </a>
                   )}
