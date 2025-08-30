@@ -1,40 +1,35 @@
-import { NextRequest, NextResponse } from "next/server";
-import fs from "fs";
-import path from "path";
+// src/app/api/clinics/route.ts
+import { NextResponse } from "next/server";
+import { adminDb } from "@/lib/firebaseAdmin";
 import type { ClinicDoc } from "@/types/clinic";
 
-// Path to your clinics.json
-const DATA_PATH = path.join(process.cwd(), "clinics.json");
-
-function readClinics() {
-  const file = fs.readFileSync(DATA_PATH, "utf-8");
-  return JSON.parse(file);
+function ok<T>(data: T, init?: number) {
+  return NextResponse.json(data, { status: init ?? 200 });
+}
+function bad(message: string, code = 400) {
+  return NextResponse.json({ error: message }, { status: code });
 }
 
-function writeClinics(data: ClinicDoc[]) {
-  fs.writeFileSync(DATA_PATH, JSON.stringify(data, null, 2));
-}
-
-// GET: get all clinics
+// GET: list clinics (public-safe subset)
 export async function GET() {
-  const clinics = readClinics();
-  return NextResponse.json(clinics);
+  const snap = await adminDb.collection("clinics").get();
+  const rows: ClinicDoc[] = snap.docs.map((d) => {
+    const c = d.data() as any;
+    return {
+      id: c.id ?? d.id,
+      name: c.name,
+      address: c.address,
+      url: c.url ?? "",
+      services: c.services ?? [],
+      coords: c.coords,
+      summary: c.summary ?? "",
+      slug: c.slug ?? d.id,
+      nameLower: c.nameLower ?? c.name?.toLowerCase?.(),
+    };
+  });
+  return ok(rows);
 }
 
-// POST: add a new clinic (admin only!)
-export async function POST(req: NextRequest) {
-  const newClinic = await req.json();
-  const clinics = readClinics();
-  clinics.push(newClinic);
-  writeClinics(clinics);
-  return NextResponse.json({ status: "ok" });
-}
-
-// DELETE: remove a clinic by id
-export async function DELETE(req: NextRequest) {
-  const { id } = await req.json();
-  const clinics = readClinics();
-  const updated = clinics.filter((c: ClinicDoc) => c.id !== id);
-  writeClinics(updated);
-  return NextResponse.json({ status: "ok" });
-}
+// POST/DELETE are disabled on public API
+export async function POST() { return bad("Use /api/admin/clinics", 405); }
+export async function DELETE() { return bad("Use /api/admin/clinics", 405); }
