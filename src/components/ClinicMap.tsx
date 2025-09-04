@@ -4,6 +4,7 @@ import dynamic from 'next/dynamic';
 import L, { LatLngExpression } from 'leaflet';
 import { useEffect, useMemo, useRef } from 'react';
 import { useMap } from 'react-leaflet';
+import { useRouter } from 'next/navigation';
 
 const MapContainer = dynamic(() => import('react-leaflet').then(m => m.MapContainer), { ssr: false });
 const TileLayer     = dynamic(() => import('react-leaflet').then(m => m.TileLayer),     { ssr: false });
@@ -45,7 +46,7 @@ function colorFor(bucket: string) {
     case 'pediatrics': return '#22c55e';
     case 'pharmacy':   return '#8b5cf6';
     case 'vision':     return '#ef4444';
-    default:           return '#0ea5e9'; // medical
+    default:           return '#0ea5e9';
   }
 }
 
@@ -61,7 +62,7 @@ function dotIcon(color: string, size = 18, ring = true) {
     html,
     className: 'clinic-dot',
     iconSize: [size, size],
-    iconAnchor: [size / 2, size], // bottom center
+    iconAnchor: [size / 2, size],
     popupAnchor: [0, -Math.max(16, size - 2)],
   });
 }
@@ -108,10 +109,11 @@ export default function ClinicMap({
 }: {
   clinics: MapClinic[];
   userCoords: Coords | null;
-  radiusMiles: number;            // draw a circle if userCoords present
-  selectedClinicId?: string|null; // highlight a marker
+  radiusMiles: number;
+  selectedClinicId?: string | null;
 }) {
   const center: LatLngExpression = [42.3, -83.04];
+  const router = useRouter();
 
   const iconFor = useMemo(() => {
     const baseCache = new Map<string, L.DivIcon>();
@@ -151,7 +153,7 @@ export default function ClinicMap({
             {!!radiusMiles && (
               <Circle
                 center={[userCoords[0], userCoords[1]]}
-                radius={radiusMiles * 1609.34} // miles → meters
+                radius={radiusMiles * 1609.34}
                 pathOptions={{ color: '#0ea5e9', fillColor: '#0ea5e9', fillOpacity: 0.08, weight: 1 }}
               />
             )}
@@ -161,9 +163,18 @@ export default function ClinicMap({
         {clinics.map(c => {
           const isSelected = selectedClinicId && c.id === selectedClinicId;
           const icon = iconFor(c, !!isSelected);
+          const detailsPath = `/finder/${encodeURIComponent(c.slug ?? c.id)}`;
           const gmaps = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(c.address || `${c.coords[0]},${c.coords[1]}`)}`;
+
           return (
-            <Marker key={c.id} position={[c.coords[0], c.coords[1]]} icon={icon}>
+            <Marker
+              key={c.id}
+              position={[c.coords[0], c.coords[1]]}
+              icon={icon}
+              eventHandlers={{
+                click: () => router.push(detailsPath), // 👈 navigate on marker click
+              }}
+            >
               <Popup>
                 <div style={{ maxWidth: 240 }}>
                   <div style={{ fontWeight: 600 }}>
@@ -176,6 +187,9 @@ export default function ClinicMap({
                   )}
                   <div style={{ fontSize: 12, marginTop: 6 }}>{c.address}</div>
                   <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                    <a className="underline" href={detailsPath}>
+                      View details →
+                    </a>
                     {!!c.url && (
                       <a className="underline" target="_blank" rel="noreferrer" href={c.url}>
                         Website
