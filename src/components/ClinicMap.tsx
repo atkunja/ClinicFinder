@@ -1,7 +1,12 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import L, { LatLngExpression } from 'leaflet';
+import L, {
+  LatLngExpression,
+  LeafletEventHandlerFnMap,
+  LeafletMouseEvent,
+  Popup as LeafletPopup,
+} from 'leaflet';
 import { useEffect, useMemo, useRef } from 'react';
 import { useMap } from 'react-leaflet';
 
@@ -113,6 +118,7 @@ export default function ClinicMap({
 }) {
   const center: LatLngExpression = [42.3, -83.04];
 
+  // marker icon cache
   const iconFor = useMemo(() => {
     const baseCache = new Map<string, L.DivIcon>();
     const bigCache  = new Map<string, L.DivIcon>();
@@ -132,6 +138,64 @@ export default function ClinicMap({
     if (userCoords) pts.push([userCoords[0], userCoords[1]]);
     return pts;
   }, [clinics, userCoords]);
+
+  // ----- Hover-sticky popup infra (typed & per marker) -----
+  const popupEls = useRef<Map<string, HTMLElement>>(new Map());
+  const closeTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+  const popupHandlers = useRef<Map<string, { enter: () => void; leave: () => void }>>(new Map());
+
+  const clearClose = (id: string) => {
+    const t = closeTimers.current.get(id);
+    if (t) {
+      clearTimeout(t);
+      closeTimers.current.delete(id);
+    }
+  };
+
+  const scheduleClose = (id: string, marker: L.Marker) => {
+    clearClose(id);
+    const t = setTimeout(() => marker.closePopup(), 250);
+    closeTimers.current.set(id, t);
+  };
+
+  const onMarkerMouseOver = (id: string, e: LeafletMouseEvent) => {
+    clearClose(id);
+    (e.target as L.Marker).openPopup();
+  };
+
+  const onMarkerMouseOut = (id: string, e: LeafletMouseEvent) => {
+    const marker = e.target as L.Marker;
+    const toNode = (e.originalEvent as MouseEvent | undefined)?.relatedTarget as (Node | null);
+    const popupEl = popupEls.current.get(id);
+    if (popupEl && toNode && popupEl.contains(toNode)) return; // moving into popup
+    scheduleClose(id, marker);
+  };
+
+  const onPopupOpen = (id: string, popup: LeafletPopup, marker: L.Marker) => {
+    const el = popup.getElement();
+    if (!el) return;
+
+    popupEls.current.set(id, el);
+
+    const enter = () => clearClose(id);
+    const leave = () => scheduleClose(id, marker);
+
+    el.addEventListener('mouseenter', enter);
+    el.addEventListener('mouseleave', leave);
+    popupHandlers.current.set(id, { enter, leave });
+  };
+
+  const onPopupClose = (id: string, popup: LeafletPopup) => {
+    const el = popupEls.current.get(id);
+    const handlers = popupHandlers.current.get(id);
+    if (el && handlers) {
+      el.removeEventListener('mouseenter', handlers.enter);
+      el.removeEventListener('mouseleave', handlers.leave);
+    }
+    popupEls.current.delete(id);
+    popupHandlers.current.delete(id);
+    clearClose(id);
+  };
 
   return (
     <div className="relative rounded-2xl overflow-hidden border">
@@ -158,25 +222,28 @@ export default function ClinicMap({
           </>
         )}
 
-        {clinics.map(c => {
+        {clinics.map((c) => {
           const isSelected = selectedClinicId && c.id === selectedClinicId;
           const icon = iconFor(c, !!isSelected);
           const detailsPath = `/finder/${encodeURIComponent(c.slug ?? c.id)}`;
-          const gmaps = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(c.address || `${c.coords[0]},${c.coords[1]}`)}`;
+          const gmaps = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(
+            c.address || `${c.coords[0]},${c.coords[1]}`
+          )}`;
+
+          // Build a typed Leaflet handler map so TS is happy
+          const handlers: LeafletEventHandlerFnMap = {
+            mouseover: (e) => onMarkerMouseOver(c.id, e as LeafletMouseEvent),
+            mouseout:  (e) => onMarkerMouseOut(c.id,  e as LeafletMouseEvent),
+            popupopen: (e) => onPopupOpen(c.id, (e as any).popup as LeafletPopup, (e.target as L.Marker)),
+            popupclose:(e) => onPopupClose(c.id, (e as any).popup as LeafletPopup),
+          };
 
           return (
             <Marker
               key={c.id}
               position={[c.coords[0], c.coords[1]]}
               icon={icon}
-              eventHandlers={{
-                mouseover: (e) => {
-                  e.target.openPopup();
-                },
-                mouseout: (e) => {
-                  e.target.closePopup();
-                }
-              }}
+              eventHandlers={handlers}
             >
               <Popup>
                 <div style={{ maxWidth: 240 }}>
