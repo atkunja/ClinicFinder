@@ -1,10 +1,11 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import "leaflet/dist/leaflet.css";
-import Results from "./results";
-import { db } from "@/lib/firebase";
-import { collection, onSnapshot } from "firebase/firestore";
+import { useEffect, useMemo, useState } from 'react';
+import 'leaflet/dist/leaflet.css';
+import Results from './results';
+import { db } from '@/lib/firebase';
+import { collection, onSnapshot } from 'firebase/firestore';
+import dynamic from 'next/dynamic';
 
 type Coords = [number, number];
 
@@ -16,8 +17,7 @@ function haversineKm(a: Coords, b: Coords) {
   const dLat = toRad(lat2 - lat1);
   const dLon = toRad(lon2 - lon1);
   const s1 = Math.sin(dLat / 2) ** 2;
-  const s2 =
-    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+  const s2 = Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
   const c = 2 * Math.atan2(Math.sqrt(s1 + s2), Math.sqrt(1 - (s1 + s2)));
   return R * c;
 }
@@ -34,17 +34,21 @@ export type Clinic = {
   verified?: boolean;
   languages?: string[];
   eligibility?: string[];
+  // miles is added at runtime
 };
+
+// lazy-load the map component; path matches the file we just created
+const ClinicMap = dynamic(() => import('@/components/ClinicMap'), { ssr: false });
 
 export default function FinderPage() {
   const [clinics, setClinics] = useState<Clinic[]>([]);
-  const [serviceFilter, setServiceFilter] = useState("");
+  const [serviceFilter, setServiceFilter] = useState('');
   const [onlyVerified, setOnlyVerified] = useState(false);
   const [userCoords, setUserCoords] = useState<Coords | null>(null);
 
-  // ✅ subscribe to Firestore like before
+  // subscribe to Firestore
   useEffect(() => {
-    const ref = collection(db, "clinics");
+    const ref = collection(db, 'clinics');
     const unsub = onSnapshot(ref, (snap) => {
       const rows: Clinic[] = snap.docs.map((d) => ({
         id: d.id,
@@ -56,27 +60,28 @@ export default function FinderPage() {
   }, []);
 
   function useMyLocation() {
-    if (!navigator.geolocation) return alert("Geolocation not supported");
+    if (!navigator.geolocation) return alert('Geolocation not supported');
     navigator.geolocation.getCurrentPosition(
       (pos) => setUserCoords([pos.coords.latitude, pos.coords.longitude]),
-      () => alert("Couldn't get your location")
+      () => alert("Couldn't get your location"),
+      { enableHighAccuracy: true, timeout: 8000 }
     );
   }
 
-  const visibleClinics = clinics
-    .filter((c) =>
-      serviceFilter
-        ? c.services?.some((s) =>
-            s.toLowerCase().includes(serviceFilter.toLowerCase())
-          )
-        : true
-    )
-    .filter((c) => (onlyVerified ? c.verified : true))
-    .map((c) => {
-      const distKm = userCoords ? haversineKm(userCoords, c.coords) : Infinity;
-      return { ...c, miles: isFinite(distKm) ? distKm * 0.621 : Infinity };
-    })
-    .sort((a, b) => (a.miles as number) - (b.miles as number));
+  const visibleClinics = useMemo(() => {
+    return clinics
+      .filter((c) =>
+        serviceFilter
+          ? c.services?.some((s) => s.toLowerCase().includes(serviceFilter.toLowerCase()))
+          : true
+      )
+      .filter((c) => (onlyVerified ? c.verified : true))
+      .map((c) => {
+        const distKm = userCoords ? haversineKm(userCoords, c.coords) : Infinity;
+        return { ...c, miles: isFinite(distKm) ? distKm * 0.621371 : Infinity };
+      })
+      .sort((a, b) => (a.miles as number) - (b.miles as number));
+  }, [clinics, serviceFilter, onlyVerified, userCoords]); // ⬅️ include userCoords
 
   return (
     <div className="min-h-screen">
@@ -93,7 +98,7 @@ export default function FinderPage() {
             checked={onlyVerified}
             onChange={() => setOnlyVerified(!onlyVerified)}
           />
-          Show verified only
+            Show verified only
         </label>
         <button
           onClick={useMyLocation}
@@ -101,6 +106,10 @@ export default function FinderPage() {
         >
           Use my location
         </button>
+      </div>
+
+      <div className="max-w-5xl mx-auto px-4 mb-6">
+        <ClinicMap clinics={visibleClinics as any} userCoords={userCoords} />
       </div>
 
       <Results clinics={visibleClinics as any} />
