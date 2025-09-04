@@ -4,7 +4,6 @@ import dynamic from 'next/dynamic';
 import L, { LatLngExpression } from 'leaflet';
 import { useEffect, useMemo, useRef } from 'react';
 import { useMap } from 'react-leaflet';
-import { useRouter } from 'next/navigation';
 
 const MapContainer = dynamic(() => import('react-leaflet').then(m => m.MapContainer), { ssr: false });
 const TileLayer     = dynamic(() => import('react-leaflet').then(m => m.TileLayer),     { ssr: false });
@@ -113,7 +112,6 @@ export default function ClinicMap({
   selectedClinicId?: string | null;
 }) {
   const center: LatLngExpression = [42.3, -83.04];
-  const router = useRouter();
 
   const iconFor = useMemo(() => {
     const baseCache = new Map<string, L.DivIcon>();
@@ -172,7 +170,12 @@ export default function ClinicMap({
               position={[c.coords[0], c.coords[1]]}
               icon={icon}
               eventHandlers={{
-                click: () => router.push(detailsPath), // 👈 navigate on marker click
+                mouseover: (e) => {
+                  e.target.openPopup();
+                },
+                mouseout: (e) => {
+                  e.target.closePopup();
+                }
               }}
             >
               <Popup>
