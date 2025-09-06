@@ -1,17 +1,16 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { collection, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import Results from "./results";
 import "leaflet/dist/leaflet.css";
 
-// 🔑 IMPORTANT: load ClinicMap only on the client to avoid `window` during SSR
+// Map component (your existing one)
 const ClinicMap = dynamic(() => import("@/components/ClinicMap"), { ssr: false });
 
 type Coords = [number, number];
-
 export type Clinic = {
   id: string;
   name: string;
@@ -48,19 +47,39 @@ function haversineKm(a: Coords, b: Coords) {
   return R * c;
 }
 
+// tiny debounce hook to keep Nominatim happy
+function useDebounced<T>(value: T, ms = 250) {
+  const [v, setV] = useState(value);
+  useEffect(() => {
+    const t = setTimeout(() => setV(value), ms);
+    return () => clearTimeout(t);
+  }, [value, ms]);
+  return v;
+}
+
+type Suggest = { label: string; lat: number; lon: number };
+
 export default function FinderPage() {
   const [clinics, setClinics] = useState<Clinic[]>([]);
   const [serviceFilter, setServiceFilter] = useState("");
-  const [onlyVerified, setOnlyVerified] = useState(false); // default OFF
+  const [onlyVerified, setOnlyVerified] = useState(false);
   const [userCoords, setUserCoords] = useState<Coords | null>(null);
-  const [radiusMiles, setRadiusMiles] = useState(100);
+  const [radiusMiles, setRadiusMiles] = useState(50);
   const [selectedClinicId, setSelectedClinicId] = useState<string | null>(null);
 
-  // Subscribe to /clinics (lowercase)
+  // Address search state
+  const [address, setAddress] = useState("");
+  const [openDrop, setOpenDrop] = useState(false);
+  const [loadingDrop, setLoadingDrop] = useState(false);
+  const [suggestions, setSuggestions] = useState<Suggest[]>([]);
+  const debouncedQ = useDebounced(address, 300);
+  const dropdownRef = useRef<HTMLDivElement | null>(null);
+
+  // --- Firestore subscribe ---
   useEffect(() => {
     // @ts-ignore
     console.log("Firestore project:", db.app?.options?.projectId);
-    const ref = collection(db, "clinics");
+    const ref = collection(db, "clinics"); // must be lowercase
     const unsub = onSnapshot(
       ref,
       (snap) => {
@@ -83,13 +102,55 @@ export default function FinderPage() {
     return () => unsub();
   }, []);
 
+  // --- Geocode suggestions (server route proxy to Nominatim) ---
+  useEffect(() => {
+    let ignore = false;
+    async function run() {
+      if (!debouncedQ || debouncedQ.length < 3) {
+        setSuggestions([]);
+        return;
+      }
+      try {
+        setLoadingDrop(true);
+        const res = await fetch(`/api/geocode?q=${encodeURIComponent(debouncedQ)}`);
+        const items: Suggest[] = res.ok ? await res.json() : [];
+        if (!ignore) setSuggestions(items);
+      } finally {
+        if (!ignore) setLoadingDrop(false);
+      }
+    }
+    run();
+    return () => { ignore = true; };
+  }, [debouncedQ]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function onDoc(e: MouseEvent) {
+      if (!dropdownRef.current) return;
+      if (!dropdownRef.current.contains(e.target as Node)) setOpenDrop(false);
+    }
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, []);
+
   function useMyLocation() {
     if (!navigator.geolocation) return alert("Geolocation not supported");
     navigator.geolocation.getCurrentPosition(
-      (pos) => setUserCoords([pos.coords.latitude, pos.coords.longitude]),
+      (pos) => {
+        const c: Coords = [pos.coords.latitude, pos.coords.longitude];
+        setUserCoords(c);
+        // set a nice default radius when using GPS
+        setRadiusMiles((r) => (r < 25 ? 25 : r));
+      },
       () => alert("Couldn't get your location"),
       { enableHighAccuracy: true, timeout: 8000 }
     );
+  }
+
+  function pickSuggestion(s: Suggest) {
+    setAddress(s.label);
+    setOpenDrop(false);
+    setUserCoords([s.lat, s.lon]);
   }
 
   const visibleClinics = useMemo(() => {
@@ -111,57 +172,124 @@ export default function FinderPage() {
       .sort((a, b) => (a.miles as number) - (b.miles as number));
   }, [clinics, serviceFilter, onlyVerified, userCoords, radiusMiles]);
 
+  // ---- UI -------------------------------------------------------------
+  const serviceChips = ["Medical", "Dental", "Mental", "Pediatrics", "Pharmacy", "Vision"];
+
   return (
-    <div className="min-h-screen">
-      {/* Controls */}
-      <div className="max-w-5xl mx-auto px-4 mt-4 mb-4 flex flex-col md:flex-row gap-3">
-        <input
-          value={serviceFilter}
-          onChange={(e) => setServiceFilter(e.target.value)}
-          className="w-full md:w-72 border rounded px-3 py-2"
-          placeholder="Filter by service (e.g., dental, pediatrics)"
-        />
-        <label className="inline-flex items-center gap-2">
-          <input
-            type="checkbox"
-            checked={onlyVerified}
-            onChange={() => setOnlyVerified((v) => !v)}
+    <div className="min-h-screen bg-[rgb(247,249,251)] text-slate-900">
+      <div className="max-w-6xl mx-auto px-4 py-5">
+        {/* Header / Controls */}
+        <div className="rounded-2xl bg-white border shadow-sm p-4 md:p-5 mb-5">
+          <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+            {/* Address input + dropdown */}
+            <div className="relative w-full lg:max-w-xl" ref={dropdownRef}>
+              <label className="sr-only">Search by address</label>
+              <input
+                value={address}
+                onChange={(e) => { setAddress(e.target.value); setOpenDrop(true); }}
+                onFocus={() => setOpenDrop(true)}
+                className="w-full rounded-xl border px-4 py-2.5 outline-none focus:ring-2 focus:ring-emerald-500"
+                placeholder="Enter address or city"
+              />
+              {openDrop && (
+                <div className="absolute z-20 mt-1 w-full max-h-64 overflow-auto rounded-xl border bg-white shadow-lg">
+                  {loadingDrop && <div className="px-3 py-2 text-sm text-slate-500">Searching…</div>}
+                  {!loadingDrop && suggestions.length === 0 && debouncedQ.length >= 3 && (
+                    <div className="px-3 py-2 text-sm text-slate-500">No matches</div>
+                  )}
+                  {suggestions.map((s, i) => (
+                    <button
+                      key={`${s.lat}${s.lon}${i}`}
+                      onClick={() => pickSuggestion(s)}
+                      className="w-full text-left px-3 py-2 hover:bg-emerald-50"
+                    >
+                      <div className="text-sm">{s.label}</div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Buttons */}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={useMyLocation}
+                className="rounded-xl bg-emerald-600 text-white px-4 py-2 hover:bg-emerald-700"
+              >
+                Use my location
+              </button>
+              <select
+                value={radiusMiles}
+                onChange={(e) => setRadiusMiles(Number(e.target.value))}
+                className="rounded-xl border px-3 py-2"
+                aria-label="Radius"
+              >
+                {[10, 25, 50, 100].map((r) => (
+                  <option key={r} value={r}>{r} mi</option>
+                ))}
+              </select>
+              <label className="inline-flex items-center gap-2 text-sm ml-1">
+                <input
+                  type="checkbox"
+                  checked={onlyVerified}
+                  onChange={() => setOnlyVerified(v => !v)}
+                  className="h-4 w-4 accent-emerald-600"
+                />
+                Show verified only
+              </label>
+            </div>
+          </div>
+
+          {/* Service chips (scrollable on mobile) */}
+          <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
+            {serviceChips.map((chip) => {
+              const active = serviceFilter.toLowerCase() === chip.toLowerCase();
+              return (
+                <button
+                  key={chip}
+                  onClick={() => setServiceFilter(active ? "" : chip)}
+                  className={`whitespace-nowrap rounded-full border px-3 py-1.5 text-sm ${
+                    active
+                      ? "bg-emerald-600 text-white border-emerald-600"
+                      : "bg-white hover:bg-slate-50"
+                  }`}
+                >
+                  {chip}
+                </button>
+              );
+            })}
+            {serviceFilter && (
+              <button
+                onClick={() => setServiceFilter("")}
+                className="rounded-full border px-3 py-1.5 text-sm bg-white hover:bg-slate-50"
+              >
+                Clear
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Map */}
+        <div className="rounded-2xl border shadow-sm overflow-hidden bg-white">
+          <div className="p-2 sm:p-3">
+            <ClinicMap
+              clinics={visibleClinics as any}
+              userCoords={userCoords}
+              radiusMiles={radiusMiles}
+              selectedClinicId={selectedClinicId}
+            />
+          </div>
+        </div>
+
+        {/* List */}
+        <div className="mt-5">
+          <Results
+            clinics={visibleClinics as any}
+            onHover={(id) => setSelectedClinicId(id)}
+            onLeave={() => setSelectedClinicId(null)}
           />
-        Show verified only
-        </label>
-        <button
-          onClick={useMyLocation}
-          className="px-3 py-2 border rounded bg-emerald-600 text-white hover:bg-emerald-700"
-        >
-          Use my location
-        </button>
-        <select
-          value={radiusMiles}
-          onChange={(e) => setRadiusMiles(Number(e.target.value))}
-          className="border rounded px-2 py-1"
-        >
-          {[10, 25, 50, 100].map((r) => (
-            <option key={r} value={r}>{r} mi</option>
-          ))}
-        </select>
+        </div>
       </div>
-
-      {/* Map (client-only) */}
-      <div className="max-w-5xl mx-auto px-4 mb-6">
-        <ClinicMap
-          clinics={visibleClinics as any}
-          userCoords={userCoords}
-          radiusMiles={radiusMiles}
-          selectedClinicId={selectedClinicId}
-        />
-      </div>
-
-      {/* List */}
-      <Results
-        clinics={visibleClinics as any}
-        onHover={(id) => setSelectedClinicId(id)}
-        onLeave={() => setSelectedClinicId(null)}
-      />
     </div>
   );
 }
