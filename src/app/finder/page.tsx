@@ -1,11 +1,14 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import dynamic from "next/dynamic";
 import { collection, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import ClinicMap from "@/components/ClinicMap";
 import Results from "./results";
 import "leaflet/dist/leaflet.css";
+
+// 🔑 IMPORTANT: load ClinicMap only on the client to avoid `window` during SSR
+const ClinicMap = dynamic(() => import("@/components/ClinicMap"), { ssr: false });
 
 type Coords = [number, number];
 
@@ -37,13 +40,10 @@ function asCoords(c: any): Coords | null {
 function haversineKm(a: Coords, b: Coords) {
   const R = 6371;
   const toRad = (x: number) => (x * Math.PI) / 180;
-  const [lat1, lon1] = a;
-  const [lat2, lon2] = b;
-  const dLat = toRad(lat2 - lat1);
-  const dLon = toRad(lon2 - lon1);
+  const [lat1, lon1] = a, [lat2, lon2] = b;
+  const dLat = toRad(lat2 - lat1), dLon = toRad(lon2 - lon1);
   const s1 = Math.sin(dLat / 2) ** 2;
-  const s2 =
-    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+  const s2 = Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
   const c = 2 * Math.atan2(Math.sqrt(s1 + s2), Math.sqrt(1 - (s1 + s2)));
   return R * c;
 }
@@ -51,14 +51,13 @@ function haversineKm(a: Coords, b: Coords) {
 export default function FinderPage() {
   const [clinics, setClinics] = useState<Clinic[]>([]);
   const [serviceFilter, setServiceFilter] = useState("");
-  const [onlyVerified, setOnlyVerified] = useState(false); // default OFF so you see new docs
+  const [onlyVerified, setOnlyVerified] = useState(false); // default OFF
   const [userCoords, setUserCoords] = useState<Coords | null>(null);
   const [radiusMiles, setRadiusMiles] = useState(100);
   const [selectedClinicId, setSelectedClinicId] = useState<string | null>(null);
 
-  // Live subscribe to Firestore /clinics (***lowercase***)
+  // Subscribe to /clinics (lowercase)
   useEffect(() => {
-    // Debug so you can confirm it’s hitting the right project / collection
     // @ts-ignore
     console.log("Firestore project:", db.app?.options?.projectId);
     const ref = collection(db, "clinics");
@@ -70,7 +69,7 @@ export default function FinderPage() {
           .map((d) => {
             const raw: any = { id: d.id, ...(d.data() as any) };
             const coords = asCoords(raw.coords);
-            if (!coords) return null; // skip broken docs so map doesn't crash
+            if (!coords) return null;
             return { ...raw, coords } as Clinic;
           })
           .filter(Boolean) as Clinic[];
@@ -114,7 +113,7 @@ export default function FinderPage() {
 
   return (
     <div className="min-h-screen">
-      {/* Your existing toolbar / chips are fine; here’s a minimal set wired to state */}
+      {/* Controls */}
       <div className="max-w-5xl mx-auto px-4 mt-4 mb-4 flex flex-col md:flex-row gap-3">
         <input
           value={serviceFilter}
@@ -128,7 +127,7 @@ export default function FinderPage() {
             checked={onlyVerified}
             onChange={() => setOnlyVerified((v) => !v)}
           />
-          Show verified only
+        Show verified only
         </label>
         <button
           onClick={useMyLocation}
@@ -142,14 +141,12 @@ export default function FinderPage() {
           className="border rounded px-2 py-1"
         >
           {[10, 25, 50, 100].map((r) => (
-            <option key={r} value={r}>
-              {r} mi
-            </option>
+            <option key={r} value={r}>{r} mi</option>
           ))}
         </select>
       </div>
 
-      {/* Map */}
+      {/* Map (client-only) */}
       <div className="max-w-5xl mx-auto px-4 mb-6">
         <ClinicMap
           clinics={visibleClinics as any}
