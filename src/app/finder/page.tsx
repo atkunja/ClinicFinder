@@ -51,11 +51,11 @@ export type Clinic = {
 export default function FinderPage() {
   const [clinics, setClinics] = useState<Clinic[]>([]);
   const [serviceFilter, setServiceFilter] = useState("");
-  const [onlyVerified, setOnlyVerified] = useState(false); // default OFF so you see new docs
+  const [onlyVerified, setOnlyVerified] = useState(false); // OFF by default
   const [userCoords, setUserCoords] = useState<Coords | null>(null);
   const [radiusMiles, setRadiusMiles] = useState(50);
 
-  // Live subscribe to Firestore /clinics  (***lowercase***)
+  // Live subscribe to Firestore /clinics (lowercase)
   useEffect(() => {
     const ref = collection(db, "clinics");
     const unsub = onSnapshot(
@@ -108,35 +108,34 @@ export default function FinderPage() {
   }, [clinics, serviceFilter, onlyVerified, userCoords, radiusMiles]);
 
   return (
-    <div className="min-h-screen py-6">
-      {/* Controls */}
-      <div className="max-w-5xl mx-auto mb-6 p-4 bg-white rounded-lg shadow border flex flex-col md:flex-row gap-3">
+    <div className="min-h-screen">
+      {/* keep your existing toolbar UI — just wire to these states */}
+      {/* Example minimal controls; feel free to keep your chips/buttons */}
+      <div className="max-w-5xl mx-auto px-4 mt-4 mb-4 flex flex-col md:flex-row gap-3">
         <input
           value={serviceFilter}
           onChange={(e) => setServiceFilter(e.target.value)}
           className="w-full md:w-72 border rounded px-3 py-2"
           placeholder="Filter by service (e.g., dental, pediatrics)"
-          aria-label="Filter by service"
         />
-        <label className="inline-flex items-center gap-2 text-sm">
+        <label className="inline-flex items-center gap-2">
           <input
             type="checkbox"
             checked={onlyVerified}
-            onChange={() => setOnlyVerified((v) => !v)}
+            onChange={() => setOnlyVerified(!onlyVerified)}
           />
           Show verified only
         </label>
         <button
           onClick={useMyLocation}
-          className="px-3 py-2 rounded bg-emerald-600 text-white hover:bg-emerald-700"
+          className="px-3 py-2 border rounded bg-emerald-600 text-white hover:bg-emerald-700"
         >
           Use my location
         </button>
         <select
           value={radiusMiles}
           onChange={(e) => setRadiusMiles(Number(e.target.value))}
-          className="border rounded px-2 py-1 text-sm"
-          aria-label="Radius"
+          className="border rounded px-2 py-1"
         >
           {[10, 25, 50, 100].map((r) => (
             <option key={r} value={r}>
@@ -146,12 +145,7 @@ export default function FinderPage() {
         </select>
       </div>
 
-      {/* Map + List */}
-      <Results
-        clinics={visibleClinics as any}
-        userCoords={userCoords}
-        radiusMiles={radiusMiles}
-      />
+      <Results clinics={visibleClinics as any} userCoords={userCoords} radiusMiles={radiusMiles} />
     </div>
   );
 }

@@ -1,8 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import dynamic from "next/dynamic";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useRef } from "react";
 import type { Clinic } from "./page";
 
 type Props = {
@@ -12,7 +11,6 @@ type Props = {
 };
 
 export default function Results({ clinics, userCoords, radiusMiles }: Props) {
-  const mapElRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<any>(null);
   const layerRef = useRef<any>(null);
 
@@ -33,17 +31,17 @@ export default function Results({ clinics, userCoords, radiusMiles }: Props) {
           "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
       });
 
-      // wipe any old instance (hot reload)
+      // remove any previous instance (hot reload/nav)
       if (mapRef.current) {
         try { mapRef.current.remove(); } catch {}
         mapRef.current = null;
       }
 
-      const el = mapElRef.current;
+      const el = document.getElementById("finder-map");
       if (!mounted || !el) return;
 
       const map = L.map(el, {
-        center: [42.2808, -83.743], // AA fallback
+        center: [42.2808, -83.743], // fallback center
         zoom: 11,
         scrollWheelZoom: true,
       });
@@ -58,7 +56,7 @@ export default function Results({ clinics, userCoords, radiusMiles }: Props) {
       mapRef.current = map;
       layerRef.current = group;
 
-      // keep tiles correct after container resizes
+      // make sure tiles display if container size changes
       requestAnimationFrame(() => map.invalidateSize());
       const onResize = () => map.invalidateSize();
       window.addEventListener("resize", onResize);
@@ -90,11 +88,8 @@ export default function Results({ clinics, userCoords, radiusMiles }: Props) {
       // user location marker + radius
       if (userCoords) {
         const [ulat, ulng] = userCoords;
-        const home = L.marker([ulat, ulng], {
-          title: "Your location",
-        }).addTo(group);
+        const home = L.marker([ulat, ulng], { title: "Your location" }).addTo(group);
         home.bindPopup("<b>Your location</b>");
-
         const meters = radiusMiles * 1609.34;
         L.circle([ulat, ulng], { radius: meters, color: "#0ea5e9" }).addTo(group);
         bounds.extend([ulat, ulng]);
@@ -125,14 +120,14 @@ export default function Results({ clinics, userCoords, radiusMiles }: Props) {
   }, [clinics, userCoords, radiusMiles]);
 
   return (
-    <section className="max-w-5xl mx-auto">
+    <section className="max-w-5xl mx-auto px-4 pb-10">
       {/* MAP */}
-      <div className="mb-6 rounded-lg bg-white border shadow">
-        <div ref={mapElRef} id="finder-map" className="w-full h-[420px]" aria-label="Map" />
+      <div className="rounded-lg border bg-white mb-6">
+        <div id="finder-map" className="w-full h-[420px]" aria-label="Map" />
       </div>
 
       {/* LIST */}
-      <div className="rounded-lg bg-white border shadow p-4">
+      <div className="bg-white text-black rounded-lg border p-4">
         <h2 className="text-lg font-semibold mb-3">Nearest clinics</h2>
 
         {clinics.length === 0 && (
@@ -148,10 +143,10 @@ export default function Results({ clinics, userCoords, radiusMiles }: Props) {
 
         <div className="space-y-4">
           {clinics.map((clinic) => (
-            <div key={clinic.id} className="bg-white border rounded-md p-4 shadow-sm">
+            <div key={clinic.id} className="bg-white text-black border rounded-md p-4">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <div className="font-semibold">
+                  <div className="text-base font-semibold">
                     {clinic.name}
                     {clinic.miles !== undefined && isFinite(clinic.miles) && (
                       <span className="ml-2 text-xs text-gray-600">
