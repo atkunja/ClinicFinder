@@ -1,11 +1,8 @@
 // src/app/finder/page.tsx
-"use client";
-
 import { Suspense } from "react";
 import FinderInner from "./page_inner";
 
-// Ensure this route is always CSR (no prerender)
-// Either one is fine; keeping both is extra-safe with various adapters.
+// Tell Next this route is fully dynamic (no prerender) and never revalidates
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
