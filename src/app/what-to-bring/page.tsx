@@ -19,6 +19,24 @@ function Check({ children }: { children: React.ReactNode }) {
 export default function WhatToBringPage() {
   return (
     <main className="min-h-screen bg-[rgb(247,249,251)] text-slate-900">
+      {/* Global keyframes (OK in a Server Component as a plain <style>, NOT styled-jsx) */}
+      <style
+        // eslint-disable-next-line react/no-danger
+        dangerouslySetInnerHTML={{
+          __html: `
+          @keyframes floaty {
+            0% { transform: translateY(0px) }
+            50% { transform: translateY(10px) }
+            100% { transform: translateY(0px) }
+          }
+          @keyframes shimmer {
+            0% { background-position: 0% 50% }
+            100% { background-position: 200% 50% }
+          }
+        `,
+        }}
+      />
+
       {/* Hero */}
       <section className="relative overflow-hidden">
         {/* animated soft blob */}
@@ -31,17 +49,6 @@ export default function WhatToBringPage() {
             animation: "floaty 12s ease-in-out infinite",
           }}
         />
-        <style jsx>{`
-          @keyframes floaty {
-            0% { transform: translateY(0px) }
-            50% { transform: translateY(10px) }
-            100% { transform: translateY(0px) }
-          }
-          @keyframes shimmer {
-            0% { background-position: 0% 50% }
-            100% { background-position: 200% 50% }
-          }
-        `}</style>
 
         <div className="mx-auto max-w-6xl px-4 pt-10 pb-10 sm:pt-14 sm:pb-14">
           <div className="mx-auto max-w-3xl text-center">
@@ -52,7 +59,8 @@ export default function WhatToBringPage() {
               Every clinic is different. Use this checklist to be prepared and speed up your visit.
             </p>
 
-            <div className="mx-auto mt-5 h-2 w-36 rounded-full"
+            <div
+              className="mx-auto mt-5 h-2 w-36 rounded-full"
               style={{
                 background:
                   "linear-gradient(90deg, rgba(16,185,129,0.9), rgba(5,150,105,0.9), rgba(16,185,129,0.9))",
@@ -69,7 +77,9 @@ export default function WhatToBringPage() {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {/* ID & Contact */}
           <div className="rounded-2xl border bg-white p-5 shadow-sm">
-            <div className="text-sm font-semibold text-emerald-700">Identity & Contact</div>
+            <div className="text-sm font-semibold text-emerald-700">
+              Identity & Contact
+            </div>
             <ul className="mt-3 space-y-2 text-sm text-slate-700">
               <Check>Photo ID (driver’s license, passport, school ID) if available</Check>
               <Check>Proof of address (mail, lease, or bill) if available</Check>
@@ -79,7 +89,9 @@ export default function WhatToBringPage() {
 
           {/* Insurance / Payment */}
           <div className="rounded-2xl border bg-white p-5 shadow-sm">
-            <div className="text-sm font-semibold text-emerald-700">Insurance / Payment</div>
+            <div className="text-sm font-semibold text-emerald-700">
+              Insurance / Payment
+            </div>
             <ul className="mt-3 space-y-2 text-sm text-slate-700">
               <Check>Insurance card (if you have one)</Check>
               <Check>Medicaid/Medicare information (if applicable)</Check>
