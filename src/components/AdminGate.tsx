@@ -1,36 +1,33 @@
 "use client";
 
-import { Suspense, useEffect } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { onAuthStateChanged } from "firebase/auth";
-import { auth } from "@/lib/firebase";
-import RequireAuth from "@/components/RequireAuth";
+import { useAuth } from "@/components/AuthProvider";
 
-const allow = (email?: string | null) =>
-  (process.env.NEXT_PUBLIC_ADMIN_ALLOWLIST || "")
-    .split(",")
-    .map((s) => s.trim().toLowerCase())
-    .includes((email || "").toLowerCase());
-
-function AdminGateInner({ children }: { children: React.ReactNode }) {
-  const router = useRouter();
-
-  useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (u) => {
-      // RequireAuth will redirect unauthenticated users to /auth/login
-      if (!u) return;
-      if (!allow(u.email)) router.replace("/"); // non-admins back home
-    });
-    return () => unsub();
-  }, [router]);
-
-  return <RequireAuth>{children}</RequireAuth>;
+function isAllowed(email?: string | null) {
+  const raw = process.env.NEXT_PUBLIC_ADMIN_ALLOWLIST || "";
+  const list = raw.split(",").map(s => s.trim().toLowerCase()).filter(Boolean);
+  return !!email && list.includes(email.toLowerCase());
 }
 
 export default function AdminGate({ children }: { children: React.ReactNode }) {
-  return (
-    <Suspense fallback={<div className="p-8 text-black">Checking access…</div>}>
-      <AdminGateInner>{children}</AdminGateInner>
-    </Suspense>
-  );
+  const { user, loading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (loading) return;
+    if (!user) {
+      router.replace("/login");
+      return;
+    }
+    if (!isAllowed(user.email)) {
+      router.replace("/");
+    }
+  }, [user, loading, router]);
+
+  if (loading) return <div className="p-8 text-slate-700">Checking access…</div>;
+  if (!user) return null;
+  if (!isAllowed(user.email)) return null;
+
+  return <>{children}</>;
 }
