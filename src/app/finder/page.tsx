@@ -1,44 +1,20 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import "leaflet/dist/leaflet.css";
-import Results from "./results";
-import { db } from "@/lib/firebase";
 import { collection, onSnapshot } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import ClinicMap from "@/components/ClinicMap";
+import Results from "./results";
+import "leaflet/dist/leaflet.css";
 
 type Coords = [number, number];
-
-function toNumber(n: any): number | null {
-  const v = typeof n === "string" ? parseFloat(n) : n;
-  return Number.isFinite(v) ? v : null;
-}
-function asCoords(c: any): Coords | null {
-  if (!Array.isArray(c) || c.length < 2) return null;
-  const lat = toNumber(c[0]);
-  const lng = toNumber(c[1]);
-  if (lat == null || lng == null) return null;
-  return [lat, lng];
-}
-function haversineKm(a: Coords, b: Coords) {
-  const toRad = (x: number) => (x * Math.PI) / 180;
-  const [lat1, lon1] = a;
-  const [lat2, lon2] = b;
-  const R = 6371;
-  const dLat = toRad(lat2 - lat1);
-  const dLon = toRad(lon2 - lon1);
-  const s1 = Math.sin(dLat / 2) ** 2;
-  const s2 =
-    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
-  const c = 2 * Math.atan2(Math.sqrt(s1 + s2), Math.sqrt(1 - (s1 + s2)));
-  return R * c;
-}
 
 export type Clinic = {
   id: string;
   name: string;
   address: string;
   url?: string;
-  services: string[];
+  services?: string[];
   coords: Coords;
   summary?: string;
   slug?: string;
@@ -48,30 +24,60 @@ export type Clinic = {
   miles?: number;
 };
 
+function toNum(n: any): number | null {
+  const v = typeof n === "string" ? parseFloat(n) : n;
+  return Number.isFinite(v) ? v : null;
+}
+function asCoords(c: any): Coords | null {
+  if (!Array.isArray(c) || c.length < 2) return null;
+  const lat = toNum(c[0]);
+  const lng = toNum(c[1]);
+  return lat == null || lng == null ? null : [lat, lng];
+}
+function haversineKm(a: Coords, b: Coords) {
+  const R = 6371;
+  const toRad = (x: number) => (x * Math.PI) / 180;
+  const [lat1, lon1] = a;
+  const [lat2, lon2] = b;
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const s1 = Math.sin(dLat / 2) ** 2;
+  const s2 =
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+  const c = 2 * Math.atan2(Math.sqrt(s1 + s2), Math.sqrt(1 - (s1 + s2)));
+  return R * c;
+}
+
 export default function FinderPage() {
   const [clinics, setClinics] = useState<Clinic[]>([]);
   const [serviceFilter, setServiceFilter] = useState("");
-  const [onlyVerified, setOnlyVerified] = useState(false); // OFF by default
+  const [onlyVerified, setOnlyVerified] = useState(false); // default OFF so you see new docs
   const [userCoords, setUserCoords] = useState<Coords | null>(null);
-  const [radiusMiles, setRadiusMiles] = useState(50);
+  const [radiusMiles, setRadiusMiles] = useState(100);
+  const [selectedClinicId, setSelectedClinicId] = useState<string | null>(null);
 
-  // Live subscribe to Firestore /clinics (lowercase)
+  // Live subscribe to Firestore /clinics (***lowercase***)
   useEffect(() => {
+    // Debug so you can confirm it’s hitting the right project / collection
+    // @ts-ignore
+    console.log("Firestore project:", db.app?.options?.projectId);
     const ref = collection(db, "clinics");
     const unsub = onSnapshot(
       ref,
       (snap) => {
+        console.log("clinics snapshot size:", snap.size);
         const rows: Clinic[] = snap.docs
           .map((d) => {
             const raw: any = { id: d.id, ...(d.data() as any) };
             const coords = asCoords(raw.coords);
-            if (!coords) return null; // skip broken docs so they don't crash map
+            if (!coords) return null; // skip broken docs so map doesn't crash
             return { ...raw, coords } as Clinic;
           })
           .filter(Boolean) as Clinic[];
         setClinics(rows);
       },
       (err) => {
+        console.error("onSnapshot error:", err);
         alert(`Firestore error: ${err.message}`);
       }
     );
@@ -88,7 +94,7 @@ export default function FinderPage() {
   }
 
   const visibleClinics = useMemo(() => {
-    const filtered = clinics
+    return clinics
       .filter((c) =>
         serviceFilter
           ? (c.services || []).some((s) =>
@@ -104,13 +110,11 @@ export default function FinderPage() {
       })
       .filter((c) => (userCoords ? (c.miles ?? Infinity) <= radiusMiles : true))
       .sort((a, b) => (a.miles as number) - (b.miles as number));
-    return filtered;
   }, [clinics, serviceFilter, onlyVerified, userCoords, radiusMiles]);
 
   return (
     <div className="min-h-screen">
-      {/* keep your existing toolbar UI — just wire to these states */}
-      {/* Example minimal controls; feel free to keep your chips/buttons */}
+      {/* Your existing toolbar / chips are fine; here’s a minimal set wired to state */}
       <div className="max-w-5xl mx-auto px-4 mt-4 mb-4 flex flex-col md:flex-row gap-3">
         <input
           value={serviceFilter}
@@ -122,7 +126,7 @@ export default function FinderPage() {
           <input
             type="checkbox"
             checked={onlyVerified}
-            onChange={() => setOnlyVerified(!onlyVerified)}
+            onChange={() => setOnlyVerified((v) => !v)}
           />
           Show verified only
         </label>
@@ -145,7 +149,22 @@ export default function FinderPage() {
         </select>
       </div>
 
-      <Results clinics={visibleClinics as any} userCoords={userCoords} radiusMiles={radiusMiles} />
+      {/* Map */}
+      <div className="max-w-5xl mx-auto px-4 mb-6">
+        <ClinicMap
+          clinics={visibleClinics as any}
+          userCoords={userCoords}
+          radiusMiles={radiusMiles}
+          selectedClinicId={selectedClinicId}
+        />
+      </div>
+
+      {/* List */}
+      <Results
+        clinics={visibleClinics as any}
+        onHover={(id) => setSelectedClinicId(id)}
+        onLeave={() => setSelectedClinicId(null)}
+      />
     </div>
   );
 }
