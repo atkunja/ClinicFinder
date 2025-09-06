@@ -6,6 +6,7 @@ import { collection, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import Results from "./results";
 import "leaflet/dist/leaflet.css";
+import RequireAuth from "@/components/RequireAuth";
 
 // Map component (your existing one)
 const ClinicMap = dynamic(() => import("@/components/ClinicMap"), { ssr: false });
@@ -59,7 +60,7 @@ function useDebounced<T>(value: T, ms = 250) {
 
 type Suggest = { label: string; lat: number; lon: number };
 
-export default function FinderPage() {
+function FinderContent() {
   const [clinics, setClinics] = useState<Clinic[]>([]);
   const [serviceFilter, setServiceFilter] = useState("");
   const [onlyVerified, setOnlyVerified] = useState(false);
@@ -77,13 +78,10 @@ export default function FinderPage() {
 
   // --- Firestore subscribe ---
   useEffect(() => {
-    // @ts-ignore
-    console.log("Firestore project:", db.app?.options?.projectId);
     const ref = collection(db, "clinics"); // must be lowercase
     const unsub = onSnapshot(
       ref,
       (snap) => {
-        console.log("clinics snapshot size:", snap.size);
         const rows: Clinic[] = snap.docs
           .map((d) => {
             const raw: any = { id: d.id, ...(d.data() as any) };
@@ -139,7 +137,6 @@ export default function FinderPage() {
       (pos) => {
         const c: Coords = [pos.coords.latitude, pos.coords.longitude];
         setUserCoords(c);
-        // set a nice default radius when using GPS
         setRadiusMiles((r) => (r < 25 ? 25 : r));
       },
       () => alert("Couldn't get your location"),
@@ -172,7 +169,6 @@ export default function FinderPage() {
       .sort((a, b) => (a.miles as number) - (b.miles as number));
   }, [clinics, serviceFilter, onlyVerified, userCoords, radiusMiles]);
 
-  // ---- UI -------------------------------------------------------------
   const serviceChips = ["Medical", "Dental", "Mental", "Pediatrics", "Pharmacy", "Vision"];
 
   return (
@@ -240,7 +236,7 @@ export default function FinderPage() {
             </div>
           </div>
 
-          {/* Service chips (scrollable on mobile) */}
+          {/* Service chips */}
           <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
             {serviceChips.map((chip) => {
               const active = serviceFilter.toLowerCase() === chip.toLowerCase();
@@ -291,5 +287,13 @@ export default function FinderPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function FinderPage() {
+  return (
+    <RequireAuth>
+      <FinderContent />
+    </RequireAuth>
   );
 }
