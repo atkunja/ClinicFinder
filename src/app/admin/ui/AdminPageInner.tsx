@@ -34,7 +34,6 @@ function parseCSV(s: string): string[] {
 }
 
 export default function AdminPageInner() {
-  // ——— NO gating / NO disabled overlay ———
   const [clinics, setClinics] = useState<Clinic[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -141,7 +140,6 @@ export default function AdminPageInner() {
       if (!json?.ok) throw new Error(json?.error || "Ingest failed");
       const d = json.data as any;
 
-      // OVERWRITE EVERY FIELD
       setName(d.name || "");
       setAddress(d.address || "");
       setUrl(d.website || link);
@@ -221,47 +219,46 @@ export default function AdminPageInner() {
   const totalVerified = useMemo(() => clinics.filter((c) => c.verified).length, [clinics]);
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-6">
+    <div className="admin-scope max-w-4xl mx-auto px-4 py-6 text-black">
       <Link href="/finder" className="text-emerald-700 underline">&larr; Back to Finder</Link>
       <h1 className="text-2xl font-bold mt-3 mb-4">Admin Dashboard</h1>
       <div className="mb-4 text-sm opacity-80">Total clinics: {clinics.length} · Verified: {totalVerified}</div>
 
-      {/* ——— NEVER DISABLE THIS FORM ——— */}
-      <form onSubmit={saveClinic} className="rounded-lg border p-4 space-y-3 bg-white">
+      <form onSubmit={saveClinic} className="rounded-lg border p-4 space-y-3 bg-white text-black">
         <h2 className="font-semibold">Add / Edit Clinic</h2>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <input className="border rounded px-3 py-2" placeholder="Document ID (slug)" value={id} onChange={(e) => setId(e.target.value)} />
-          <input className="border rounded px-3 py-2" placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} />
+          <input className="border rounded px-3 py-2 bg-white text-black placeholder:text-gray-500" placeholder="Document ID (slug)" value={id} onChange={(e) => setId(e.target.value)} />
+          <input className="border rounded px-3 py-2 bg-white text-black placeholder:text-gray-500" placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} />
         </div>
 
-        <input className="border rounded px-3 py-2 w-full" placeholder="Street address" value={address} onChange={(e) => setAddress(e.target.value)} />
+        <input className="border rounded px-3 py-2 w-full bg-white text-black placeholder:text-gray-500" placeholder="Street address" value={address} onChange={(e) => setAddress(e.target.value)} />
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <input className="border rounded px-3 py-2" placeholder="Website URL" value={url} onChange={(e) => setUrl(e.target.value)} />
-          <button type="button" onClick={autofillFromWebsite} className="border rounded px-3 py-2 w-full md:w-auto">
+          <input className="border rounded px-3 py-2 bg-white text-black placeholder:text-gray-500" placeholder="Website URL" value={url} onChange={(e) => setUrl(e.target.value)} />
+          <button type="button" onClick={autofillFromWebsite} className="border rounded px-3 py-2 bg-white text-black">
             {busy ? "Auto-filling…" : "Auto-fill from website"}
           </button>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <input className="border rounded px-3 py-2" placeholder="Phone (optional)" value={phone} onChange={(e) => setPhone(e.target.value)} />
-          <input className="border rounded px-3 py-2" placeholder="Photo URL (optional)" value={photoUrl} onChange={(e) => setPhotoUrl(e.target.value)} />
+          <input className="border rounded px-3 py-2 bg-white text-black placeholder:text-gray-500" placeholder="Phone (optional)" value={phone} onChange={(e) => setPhone(e.target.value)} />
+          <input className="border rounded px-3 py-2 bg-white text-black placeholder:text-gray-500" placeholder="Photo URL (optional)" value={photoUrl} onChange={(e) => setPhotoUrl(e.target.value)} />
         </div>
 
-        <input className="border rounded px-3 py-2 w-full" placeholder="Services (comma-separated)" value={servicesInput} onChange={(e) => setServicesInput(e.target.value)} />
+        <input className="border rounded px-3 py-2 w-full bg-white text-black placeholder:text-gray-500" placeholder="Services (comma-separated)" value={servicesInput} onChange={(e) => setServicesInput(e.target.value)} />
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <input className="border rounded px-3 py-2" placeholder="Languages (comma-separated)" value={languagesInput} onChange={(e) => setLanguagesInput(e.target.value)} />
-          <input className="border rounded px-3 py-2" placeholder="Eligibility (comma-separated)" value={eligibilityInput} onChange={(e) => setEligibilityInput(e.target.value)} />
+          <input className="border rounded px-3 py-2 bg-white text-black placeholder:text-gray-500" placeholder="Languages (comma-separated)" value={languagesInput} onChange={(e) => setLanguagesInput(e.target.value)} />
+          <input className="border rounded px-3 py-2 bg-white text-black placeholder:text-gray-500" placeholder="Eligibility (comma-separated)" value={eligibilityInput} onChange={(e) => setEligibilityInput(e.target.value)} />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <div className="flex gap-2">
-            <input className="border rounded px-3 py-2 w-full" placeholder="Latitude" value={lat} onChange={(e) => setLat(e.target.value)} />
-            <input className="border rounded px-3 py-2 w-full" placeholder="Longitude" value={lng} onChange={(e) => setLng(e.target.value)} />
+            <input className="border rounded px-3 py-2 bg-white text-black placeholder:text-gray-500" placeholder="Latitude" value={lat} onChange={(e) => setLat(e.target.value)} />
+            <input className="border rounded px-3 py-2 bg-white text-black placeholder:text-gray-500" placeholder="Longitude" value={lng} onChange={(e) => setLng(e.target.value)} />
           </div>
-          <button type="button" onClick={geocodeAddress} className="border rounded px-3 py-2">Geocode address</button>
+          <button type="button" onClick={geocodeAddress} className="border rounded px-3 py-2 bg-white text-black">Geocode address</button>
           <label className="inline-flex items-center gap-2"><input type="checkbox" checked={verified} onChange={() => setVerified(!verified)} /> Verified</label>
         </div>
 
@@ -269,21 +266,21 @@ export default function AdminPageInner() {
           {DAYS.map((d) => (
             <div key={d} className="flex flex-col">
               <label className="text-xs opacity-70 mb-1">{d}</label>
-              <input className="border rounded px-2 py-1 text-sm" placeholder='e.g., 9–5 or "Closed"' value={hours[d] || ""} onChange={(e) => setHours({ ...hours, [d]: e.target.value })} />
+              <input className="border rounded px-2 py-1 text-sm bg-white text-black placeholder:text-gray-500" placeholder='e.g., 9–5 or "Closed"' value={hours[d] || ""} onChange={(e) => setHours({ ...hours, [d]: e.target.value })} />
             </div>
           ))}
         </div>
 
-        <textarea className="border rounded px-3 py-2 w-full h-28" placeholder="Summary" value={summary} onChange={(e) => setSummary(e.target.value)} />
+        <textarea className="border rounded px-3 py-2 w-full h-28 bg-white text-black placeholder:text-gray-500" placeholder="Summary" value={summary} onChange={(e) => setSummary(e.target.value)} />
 
         <div className="flex gap-2">
           <button type="submit" className="px-3 py-2 rounded bg-emerald-600 text-white">Save Clinic</button>
-          <button type="button" onClick={() => setSummary(buildSummary({ servicesInput, languagesInput, eligibilityInput }))} className="px-3 py-2 border rounded">Generate Summary</button>
-          <button type="button" onClick={resetForm} className="px-3 py-2 border rounded">Cancel</button>
+          <button type="button" onClick={() => setSummary(buildSummary({ servicesInput, languagesInput, eligibilityInput }))} className="px-3 py-2 border rounded bg-white text-black">Generate Summary</button>
+          <button type="button" onClick={resetForm} className="px-3 py-2 border rounded bg-white text-black">Cancel</button>
         </div>
       </form>
 
-      <div className="mt-6 rounded-lg border overflow-x-auto bg-white">
+      <div className="mt-6 rounded-lg border overflow-x-auto bg-white text-black">
         <table className="w-full text-sm">
           <thead className="bg-gray-50">
             <tr>
@@ -304,10 +301,10 @@ export default function AdminPageInner() {
                 <td className="px-3 py-2">{c.verified ? "✅" : ""}</td>
                 <td className="px-3 py-2">
                   <div className="flex gap-2">
-                    <button className="px-2 py-1 border rounded" onClick={() => loadForEdit(c)}>Edit</button>
-                    {c.url && <a href={c.url} target="_blank" rel="noreferrer" className="px-2 py-1 border rounded">Website</a>}
-                    <Link href={`/finder/${encodeURIComponent(c.slug ?? c.id)}`} className="px-2 py-1 border rounded">View</Link>
-                    <button className="px-2 py-1 border rounded text-red-700" onClick={() => removeClinic(c.id)}>Delete</button>
+                    <button className="px-2 py-1 border rounded bg-white text-black" onClick={() => loadForEdit(c)}>Edit</button>
+                    {c.url && <a href={c.url} target="_blank" rel="noreferrer" className="px-2 py-1 border rounded bg-white text-black">Website</a>}
+                    <Link href={`/finder/${encodeURIComponent(c.slug ?? c.id)}`} className="px-2 py-1 border rounded bg-white text-black">View</Link>
+                    <button className="px-2 py-1 border rounded text-red-700 bg-white" onClick={() => removeClinic(c.id)}>Delete</button>
                   </div>
                 </td>
               </tr>
