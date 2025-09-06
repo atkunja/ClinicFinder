@@ -4,26 +4,6 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { db } from "@/lib/firebase";
 import { collection, deleteDoc, doc, onSnapshot, setDoc } from "firebase/firestore";
-import { getApp, getApps, initializeApp } from "firebase/app";
-import {
-  getStorage,
-  ref as storageRef,
-  uploadBytes,
-  getDownloadURL,
-} from "firebase/storage";
-
-// If your lib/firebase already initializes the app, this is harmless.
-// It only runs if nothing exists (SSR-safe).
-const firebaseClientConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY!,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN!,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID!,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET!,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID!,
-};
-if (typeof window !== "undefined" && !getApps().length) {
-  initializeApp(firebaseClientConfig);
-}
 
 type Coords = [number, number];
 
@@ -42,7 +22,6 @@ export type Clinic = {
   languages?: string[];
   eligibility?: string[];
   hours?: Record<string, string>;
-  photoUrl?: string;
 };
 
 const DAYS: Array<keyof NonNullable<Clinic["hours"]>> = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
@@ -64,9 +43,8 @@ export default function AdminPageInner() {
   // busy flags
   const [busyAutofill, setBusyAutofill] = useState(false);
   const [busySave, setBusySave] = useState(false);
-  const [busyUpload, setBusyUpload] = useState(false);
 
-  // form
+  // form fields
   const [id, setId] = useState("");
   const [name, setName] = useState("");
   const [address, setAddress] = useState("");
@@ -78,15 +56,14 @@ export default function AdminPageInner() {
   const [lat, setLat] = useState("0");
   const [lng, setLng] = useState("0");
   const [verified, setVerified] = useState(false);
-  const [photoUrl, setPhotoUrl] = useState("");
   const [summary, setSummary] = useState("");
   const [hours, setHours] = useState<Record<string,string>>({ Mon:"",Tue:"",Wed:"",Thu:"",Fri:"",Sat:"",Sun:"" });
 
   const [editingId, setEditingId] = useState<string|null>(null);
 
-  // live table
+  // live table (lowercase 'clinics' collection)
   useEffect(() => {
-    const ref = collection(db, "clinics"); // lowercase
+    const ref = collection(db, "clinics");
     const unsub = onSnapshot(ref, snap => {
       const rows: Clinic[] = snap.docs.map(d => ({ id: d.id, ...(d.data() as any) }));
       setClinics(rows.sort((a,b) => a.name.localeCompare(b.name)));
@@ -100,9 +77,12 @@ export default function AdminPageInner() {
 
   function resetForm() {
     setEditingId(null);
-    setId(""); setName(""); setAddress(""); setUrl(""); setPhone("");
+    setId(""); setName(""); setAddress("");
+    setUrl(""); setPhone("");
     setServicesInput(""); setLanguagesInput(""); setEligibilityInput("");
-    setLat("0"); setLng("0"); setVerified(false); setPhotoUrl(""); setSummary("");
+    setLat("0"); setLng("0");
+    setVerified(false);
+    setSummary("");
     setHours({ Mon:"",Tue:"",Wed:"",Thu:"",Fri:"",Sat:"",Sun:"" });
   }
 
@@ -119,7 +99,6 @@ export default function AdminPageInner() {
     setLat(String(c.coords?.[0] ?? "0"));
     setLng(String(c.coords?.[1] ?? "0"));
     setVerified(!!c.verified);
-    setPhotoUrl(c.photoUrl || "");
     setSummary(c.summary || "");
     setHours({
       Mon: c.hours?.Mon || "", Tue: c.hours?.Tue || "", Wed: c.hours?.Wed || "",
@@ -192,34 +171,6 @@ export default function AdminPageInner() {
     }
   }
 
-  async function uploadFile(file: File) {
-    const app = getApp();
-    const storage = getStorage(app);
-    const ext = file.name.split(".").pop()?.toLowerCase() || "bin";
-    const safeId = (id || name || "clinic").toLowerCase().replace(/[^a-z0-9-]+/g, "-");
-    const path = `clinics/${safeId}/${Date.now()}.${ext}`;
-    const ref = storageRef(storage, path);
-    await uploadBytes(ref, file, { contentType: file.type || undefined });
-    return await getDownloadURL(ref);
-  }
-
-  async function onPickFile(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setBusyUpload(true);
-    try {
-      const url = await uploadFile(file);
-      setPhotoUrl(url);
-      alert("File uploaded.");
-    } catch (err: any) {
-      console.error(err);
-      alert(err?.message || "Upload failed.");
-    } finally {
-      setBusyUpload(false);
-      e.target.value = "";
-    }
-  }
-
   async function saveClinic(e: React.FormEvent) {
     e.preventDefault();
     if (busySave) return;
@@ -239,7 +190,7 @@ export default function AdminPageInner() {
         throw new Error("Latitude and Longitude must be valid numbers");
       }
 
-      // Build payload without any undefined (Firestore rejects undefined)
+      // Build payload (no undefined)
       const base: Partial<Clinic> = {
         id: cleanId,
         slug: cleanId,
@@ -263,14 +214,12 @@ export default function AdminPageInner() {
           Sat: (hours?.Sat || "").trim(),
           Sun: (hours?.Sun || "").trim(),
         },
-        photoUrl: photoUrl.trim() || undefined,
       };
 
-      // strip undefined
+      // strip undefined & empty hours
       const payload: any = {};
       for (const [k, v] of Object.entries(base)) {
         if (v === undefined) continue;
-        // also strip empty hours map entirely if all blank
         if (k === "hours") {
           const hv = v as Record<string,string>;
           const anyFilled = Object.values(hv).some(x => (x || "").trim().length);
@@ -281,7 +230,7 @@ export default function AdminPageInner() {
 
       setBusySave(true);
       await setDoc(doc(db, "clinics", cleanId), payload, { merge: true });
-      alert("Saved!");
+      alert("Saved! It should appear on the Finder map now.");
       resetForm();
     } catch (err: any) {
       console.error(err);
@@ -335,15 +284,9 @@ export default function AdminPageInner() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <input className="border rounded px-3 py-2 bg-white text-black placeholder:text-gray-500"
             placeholder="Phone (optional)" value={phone} onChange={(e)=>setPhone(e.target.value)} />
-          <div className="flex items-center gap-2">
-            <input type="file" accept=".pdf,image/*"
-              onChange={onPickFile}
-              className="block w-full text-sm file:mr-3 file:px-3 file:py-2 file:border file:rounded file:bg-white file:text-black" />
-            <button type="button" disabled={busyUpload}
-              className="border rounded px-3 py-2 bg-white text-black">
-              {busyUpload ? "Uploading…" : "Upload file"}
-            </button>
-          </div>
+          <label className="inline-flex items-center gap-2">
+            <input type="checkbox" checked={verified} onChange={()=>setVerified(v=>!v)} /> Verified
+          </label>
         </div>
 
         <input className="border rounded px-3 py-2 w-full bg-white text-black placeholder:text-gray-500"
@@ -364,9 +307,6 @@ export default function AdminPageInner() {
               placeholder="Longitude" value={lng} onChange={(e)=>setLng(e.target.value)} />
           </div>
           <button type="button" onClick={()=>geocodeAddress()} className="border rounded px-3 py-2 bg-white text-black">Geocode address</button>
-          <label className="inline-flex items-center gap-2">
-            <input type="checkbox" checked={verified} onChange={()=>setVerified(v=>!v)} /> Verified
-          </label>
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-7 gap-2">
@@ -383,15 +323,6 @@ export default function AdminPageInner() {
 
         <textarea className="border rounded px-3 py-2 w-full h-28 bg-white text-black placeholder:text-gray-500"
           placeholder="Summary" value={summary} onChange={(e)=>setSummary(e.target.value)} />
-
-        {photoUrl && (
-          <div className="text-xs">
-            Uploaded file URL:&nbsp;
-            <a href={photoUrl} target="_blank" rel="noreferrer" className="underline text-emerald-700 break-all">
-              {photoUrl}
-            </a>
-          </div>
-        )}
 
         <div className="flex gap-2">
           <button type="submit" disabled={busySave} className="px-3 py-2 rounded bg-emerald-600 text-white disabled:opacity-60">
