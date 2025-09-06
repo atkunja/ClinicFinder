@@ -1,390 +1,373 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
 import { db } from "@/lib/firebase";
-import {
-  collection,
-  getDocs,
-  deleteDoc,
-  setDoc,
-  doc,
-  type QueryDocumentSnapshot,
-  type DocumentData,
-} from "firebase/firestore";
-import type { ClinicDoc, ClinicRow, Coords } from "@/types/clinic";
+import { collection, deleteDoc, doc, onSnapshot, setDoc } from "firebase/firestore";
+import Link from "next/link";
 
-const CLINICS = collection(db, "clinics");
+type Coords = [number, number];
 
-// ----------------- helpers -----------------
-function slugify(s: string): string {
+export type Clinic = {
+  id: string;
+  slug?: string;
+  name: string;
+  nameLower?: string;
+  address: string;
+  url?: string;
+  phone?: string;
+  services: string[];
+  coords: Coords;
+  summary?: string;
+  verified?: boolean;
+  languages?: string[];
+  eligibility?: string[];
+  hours?: Record<string, string>;
+  photoUrl?: string;
+};
+
+const DAYS: Array<keyof NonNullable<Clinic["hours"]>> = [
+  "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun",
+];
+
+function parseCSV(s: string): string[] {
   return s
-    .toLowerCase()
-    .trim()
-    .replace(/[^\p{L}\p{N}]+/gu, "-")
-    .replace(/^-+|-+$/g, "");
+    .split(",")
+    .map((x) => x.trim())
+    .filter(Boolean);
 }
-
-function fixCoords(latRaw: unknown, lngRaw: unknown): Coords | null {
-  const lat = Number(latRaw);
-  const lng = Number(lngRaw);
-  if (Number.isNaN(lat) || Number.isNaN(lng)) return null;
-  let L = lat, G = lng;
-  if (Math.abs(L) > 90 && Math.abs(G) <= 90) [L, G] = [lng, lat];
-  if (Math.abs(L) > 90 || Math.abs(G) > 180) return null;
-  return [L, G];
-}
-
-async function geocodeAddress(address: string): Promise<Coords | null> {
-  if (!address?.trim()) return null;
-  try {
-    const res = await fetch(
-      `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`,
-      {
-        headers: {
-          Accept: "application/json",
-          // (Optional) Nominatim likes a descriptive UA or email:
-          // "User-Agent": "ClinicFinder/1.0 (contact@example.com)"
-        },
-      }
-    );
-    type NomRow = { lat: string; lon: string };
-    const data: NomRow[] = (await res.json()) as NomRow[];
-    if (!Array.isArray(data) || data.length === 0) return null;
-    return fixCoords(data[0].lat, data[0].lon);
-  } catch {
-    return null;
-  }
-}
-
-function toRow(d: QueryDocumentSnapshot<DocumentData>): ClinicRow {
-  const data = d.data() as Partial<ClinicDoc> & {
-    coords?: Coords;
-    lat?: number;
-    lng?: number;
-  };
-  const fixed = fixCoords(
-    data?.coords?.[0] ?? data?.lat,
-    data?.coords?.[1] ?? data?.lng
-  );
-  return {
-    docId: d.id,
-    id: (data.id ?? d.id) as string,
-    name: data.name ?? "",
-    address: data.address ?? "",
-    url: data.url ?? "",
-    services: Array.isArray(data.services)
-      ? (data.services as string[])
-      : String(data.services ?? "")
-          .split(",")
-          .map((s) => s.trim())
-          .filter(Boolean),
-    coords: (fixed ?? [0, 0]) as Coords,
-    summary: data.summary ?? "",
-    slug: data.slug,
-    nameLower: data.nameLower,
-  };
-}
-// -------------------------------------------
 
 export default function AdminPageInner() {
-  const [rows, setRows] = useState<ClinicRow[]>([]);
-  const [editing, setEditing] = useState<ClinicRow | null>(null);
-  const [form, setForm] = useState<ClinicRow>({
-    docId: "",
-    id: "",
-    name: "",
-    address: "",
-    url: "",
-    services: [],
-    coords: [0, 0],
-    summary: "",
-  });
-  const [busy, setBusy] = useState(false);
-  const [msg, setMsg] = useState("");
+  const [clinics, setClinics] = useState<Clinic[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Load clinics
+  // form state
+  const [id, setId] = useState("");
+  const [name, setName] = useState("");
+  const [address, setAddress] = useState("");
+  const [url, setUrl] = useState("");
+  const [phone, setPhone] = useState("");
+  const [servicesInput, setServicesInput] = useState("");
+  const [lat, setLat] = useState<string>("0");
+  const [lng, setLng] = useState<string>("0");
+  const [summary, setSummary] = useState("");
+  const [verified, setVerified] = useState(false);
+  const [languagesInput, setLanguagesInput] = useState("");
+  const [eligibilityInput, setEligibilityInput] = useState("");
+  const [photoUrl, setPhotoUrl] = useState("");
+  const [hours, setHours] = useState<Record<string, string>>({
+    Mon: "", Tue: "", Wed: "", Thu: "", Fri: "", Sat: "", Sun: "",
+  });
+
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
   useEffect(() => {
-    (async () => {
-      const snap = await getDocs(CLINICS);
-      const list: ClinicRow[] = [];
-      snap.forEach((d) => list.push(toRow(d)));
-      setRows(list.sort((a, b) => a.name.localeCompare(b.name)));
-    })();
+    const ref = collection(db, "clinics");
+    const unsub = onSnapshot(ref, (snap) => {
+      const rows: Clinic[] = snap.docs.map((d) => ({
+        id: d.id,
+        ...(d.data() as any),
+      }));
+      setClinics(rows.sort((a, b) => a.name.localeCompare(b.name)));
+      setLoading(false);
+    });
+    return () => unsub();
   }, []);
 
-  function setField<K extends keyof ClinicRow>(key: K, val: ClinicRow[K]) {
-    setForm((prev) => ({ ...prev, [key]: val }));
+  function resetForm() {
+    setId("");
+    setName("");
+    setAddress("");
+    setUrl("");
+    setPhone("");
+    setServicesInput("");
+    setLat("0");
+    setLng("0");
+    setSummary("");
+    setVerified(false);
+    setLanguagesInput("");
+    setEligibilityInput("");
+    setPhotoUrl("");
+    setHours({ Mon: "", Tue: "", Wed: "", Thu: "", Fri: "", Sat: "", Sun: "" });
+    setEditingId(null);
   }
 
-  function startAdd() {
-    setEditing(null);
-    setForm({
-      docId: "",
-      id: "",
-      name: "",
-      address: "",
-      url: "",
-      services: [],
-      coords: [0, 0],
-      summary: "",
+  function loadForEdit(c: Clinic) {
+    setEditingId(c.id);
+    setId(c.id);
+    setName(c.name || "");
+    setAddress(c.address || "");
+    setUrl(c.url || "");
+    setPhone(c.phone || "");
+    setServicesInput((c.services || []).join(", "));
+    setLat(String(c.coords?.[0] ?? 0));
+    setLng(String(c.coords?.[1] ?? 0));
+    setSummary(c.summary || "");
+    setVerified(!!c.verified);
+    setLanguagesInput((c.languages || []).join(", "));
+    setEligibilityInput((c.eligibility || []).join(", "));
+    setPhotoUrl(c.photoUrl || "");
+    setHours({
+      Mon: c.hours?.Mon || "",
+      Tue: c.hours?.Tue || "",
+      Wed: c.hours?.Wed || "",
+      Thu: c.hours?.Thu || "",
+      Fri: c.hours?.Fri || "",
+      Sat: c.hours?.Sat || "",
+      Sun: c.hours?.Sun || "",
     });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
-  function startEdit(c: ClinicRow) {
-    setEditing(c);
-    setForm(c);
-  }
-
-  function afterWriteReset(row?: ClinicRow) {
-    setRows((prev) => {
-      let next = prev.slice();
-      if (row) {
-        const i = next.findIndex((x) => x.docId === row.docId);
-        if (i >= 0) next[i] = row;
-        else next.push(row);
-        next = next.sort((a, b) => a.name.localeCompare(b.name));
+  async function geocodeAddress() {
+    const q = address.trim();
+    if (!q) return alert("Enter an address first");
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=1`,
+        { method: "GET", headers: { "User-Agent": "clinic-finder/1.0" } }
+      );
+      const data = await res.json();
+      if (!Array.isArray(data) || data.length === 0) {
+        alert("Address not found. Try a full street address or city + ZIP.");
+        return;
       }
-      return next;
-    });
-    setEditing(null);
-    startAdd();
-  }
-
-  async function handleSave() {
-    setBusy(true);
-    setMsg("");
-    try {
-      const latest = { ...form };
-      const services = Array.isArray(latest.services)
-        ? latest.services
-        : String(latest.services ?? "")
-            .split(",")
-            .map((s) => s.trim())
-            .filter(Boolean);
-
-      let coords = fixCoords(latest.coords?.[0], latest.coords?.[1]);
-      if (!coords) coords = await geocodeAddress(latest.address);
-      if (!coords) throw new Error("Could not determine coordinates for this address.");
-
-      const id = latest.id?.trim() || slugify(latest.name);
-      if (!id) throw new Error("Please enter a name.");
-
-      const payload: ClinicDoc = {
-        id,
-        name: latest.name,
-        address: latest.address,
-        url: latest.url,
-        services,
-        coords,
-        summary: latest.summary ?? "",
-        nameLower: latest.name.toLowerCase(),
-        slug: id,
-      };
-      const targetDocId = editing?.docId || id;
-      await setDoc(doc(CLINICS, targetDocId), payload);
-
-      setMsg("Saved!");
-      afterWriteReset({ ...payload, docId: targetDocId });
-    } catch (e: unknown) {
-      const message = e instanceof Error ? e.message : "Save failed";
-      setMsg(message);
-    } finally {
-      setBusy(false);
+      setLat(String(parseFloat(data[0].lat)));
+      setLng(String(parseFloat(data[0].lon)));
+    } catch (e) {
+      console.error(e);
+      alert("Geocoding failed.");
     }
   }
 
-  async function handleGenerateSummary() {
-    const url = (form.url || "").trim();
-    if (!url) {
-      setMsg("Enter the clinic website URL first.");
-      return;
-    }
+  async function autofillFromWebsite() {
+    const link = url.trim();
+    if (!link) return alert("Enter a website URL first (e.g., https://example.org)");
     setBusy(true);
-    setMsg("Fetching summary…");
     try {
-      const res = await fetch("/api/admin/scrape", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url }),
+      const res = await fetch(`/api/ingest?url=${encodeURIComponent(link)}`);
+      const json = await res.json();
+      if (!json?.ok) throw new Error(json?.error || "Ingest failed");
+      const d = json.data as any;
+
+      if (d.name) setName(d.name);
+      if (d.address) setAddress(d.address);
+      if (d.website && !url) setUrl(d.website);
+      if (d.phone) setPhone(d.phone);
+      if (Array.isArray(d.services)) setServicesInput(d.services.join(", "));
+      if (Array.isArray(d.languages)) setLanguagesInput(d.languages.join(", "));
+      if (Array.isArray(d.eligibility)) setEligibilityInput(d.eligibility.join(", "));
+      if (d.summary) setSummary(d.summary);
+      if (d.hours) setHours({
+        Mon: d.hours.Mon || "",
+        Tue: d.hours.Tue || "",
+        Wed: d.hours.Wed || "",
+        Thu: d.hours.Thu || "",
+        Fri: d.hours.Fri || "",
+        Sat: d.hours.Sat || "",
+        Sun: d.hours.Sun || "",
       });
-      const payload = (await res.json()) as { text?: string; error?: string };
-      if (!res.ok) throw new Error(payload?.error || "Scrape failed");
-      const text = String(payload?.text ?? "").trim();
-      if (!text) throw new Error("No content found on that page.");
-      setField("summary", text);
-      setMsg("Summary fetched. Review and click Save Clinic.");
-    } catch (e: unknown) {
-      const message = e instanceof Error ? e.message : "Summary failed";
-      setMsg(message);
+      if (Array.isArray(d.coords) && d.coords.length === 2) {
+        setLat(String(d.coords[0]));
+        setLng(String(d.coords[1]));
+      } else if (d.address && (!lat || !lng)) {
+        // no coords returned → you can hit the Geocode button
+      }
+      alert("Auto-fill complete. Review and Save.");
+    } catch (e: any) {
+      console.error(e);
+      alert(e?.message || "Auto-fill failed.");
     } finally {
       setBusy(false);
     }
   }
 
-  async function handleDelete(docId: string) {
-    if (!confirm("Delete this clinic?")) return;
-    await deleteDoc(doc(CLINICS, docId));
-    setRows((prev) => prev.filter((r) => r.docId !== docId));
-    if (editing?.docId === docId) startAdd();
+  async function saveClinic(e: React.FormEvent) {
+    e.preventDefault();
+    const idVal = id.trim();
+    if (!idVal) return alert("Document ID is required");
+    if (!name.trim()) return alert("Name is required");
+    if (!address.trim()) return alert("Address is required");
+
+    const latNum = parseFloat(lat);
+    const lngNum = parseFloat(lng);
+    if (!Number.isFinite(latNum) || !Number.isFinite(lngNum)) {
+      return alert("Latitude/Longitude must be valid numbers");
+    }
+
+    const services = parseCSV(servicesInput);
+    const languages = parseCSV(languagesInput);
+    const eligibility = parseCSV(eligibilityInput);
+
+    const payload: Clinic = {
+      id: idVal,
+      slug: idVal,
+      name: name.trim(),
+      nameLower: name.trim().toLowerCase(),
+      address: address.trim(),
+      url: url.trim() || undefined,
+      phone: phone.trim() || undefined,
+      services,
+      coords: [latNum, lngNum],
+      summary: summary.trim() || undefined,
+      verified,
+      languages,
+      eligibility,
+      hours: {
+        Mon: (hours?.Mon || "").trim(),
+        Tue: (hours?.Tue || "").trim(),
+        Wed: (hours?.Wed || "").trim(),
+        Thu: (hours?.Thu || "").trim(),
+        Fri: (hours?.Fri || "").trim(),
+        Sat: (hours?.Sat || "").trim(),
+        Sun: (hours?.Sun || "").trim(),
+      },
+      photoUrl: photoUrl.trim() || undefined,
+    };
+
+    await setDoc(doc(db, "clinics", idVal), payload, { merge: true });
+    resetForm();
   }
+
+  async function removeClinic(cid: string) {
+    if (!confirm("Delete this clinic?")) return;
+    await deleteDoc(doc(db, "clinics", cid));
+    if (editingId === cid) resetForm();
+  }
+
+  const totalVerified = useMemo(() => clinics.filter((c) => c.verified).length, [clinics]);
 
   return (
-    <div className="max-w-5xl mx-auto p-6 text-black">
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="text-2xl font-bold">Admin Dashboard</h1>
-        <Link href="/finder" className="text-emerald-700 underline">
-          ← Back to Finder
-        </Link>
+    <div className="max-w-4xl mx-auto px-4 py-6">
+      <Link href="/finder" className="text-emerald-700 underline">
+        &larr; Back to Finder
+      </Link>
+
+      <h1 className="text-2xl font-bold mt-3 mb-4">Admin Dashboard</h1>
+
+      <div className="mb-4 text-sm opacity-80">
+        Total clinics: {clinics.length} &middot; Verified: {totalVerified}
       </div>
 
-      {msg && <div className="mb-3 text-sm text-emerald-700">{msg}</div>}
+      <form onSubmit={saveClinic} className="rounded-lg border p-4 space-y-3 bg-white">
+        <h2 className="font-semibold">Add / Edit Clinic</h2>
 
-      <div className="rounded border bg-white p-4 mb-8">
-        <h2 className="font-semibold mb-3">
-          {editing ? "Edit Clinic" : "Add New Clinic"}
-        </h2>
-
-        <div className="grid md:grid-cols-2 gap-3">
-          <input
-            className="border p-2 rounded"
-            placeholder="Document ID (used as slug)"
-            value={form.id}
-            onChange={(e) => setField("id", e.target.value)}
-          />
-          <input
-            className="border p-2 rounded"
-            placeholder="Name"
-            value={form.name}
-            onChange={(e) => setField("name", e.target.value)}
-          />
-          <input
-            className="border p-2 rounded md:col-span-2"
-            placeholder="Street address"
-            value={form.address}
-            onChange={(e) => setField("address", e.target.value)}
-            onBlur={async (e) => {
-              const c = await geocodeAddress(e.currentTarget.value);
-              if (c) setField("coords", c);
-            }}
-          />
-          <input
-            className="border p-2 rounded md:col-span-2"
-            placeholder="Website URL"
-            value={form.url}
-            onChange={(e) => setField("url", e.target.value)}
-          />
-          <input
-            className="border p-2 rounded md:col-span-2"
-            placeholder="Services (comma-separated)"
-            value={form.services.join(", ")}
-            onChange={(e) =>
-              setField(
-                "services",
-                e.target.value.split(",").map((s) => s.trim())
-              )
-            }
-          />
-          <input
-            className="border p-2 rounded"
-            placeholder="Lat"
-            value={form.coords[0]}
-            onChange={(e) =>
-              setField("coords", [
-                Number(e.target.value) || 0,
-                form.coords[1],
-              ])
-            }
-          />
-          <input
-            className="border p-2 rounded"
-            placeholder="Lng"
-            value={form.coords[1]}
-            onChange={(e) =>
-              setField("coords", [
-                form.coords[0],
-                Number(e.target.value) || 0,
-              ])
-            }
-          />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <input className="border rounded px-3 py-2" placeholder="Document ID (slug)" value={id} onChange={(e) => setId(e.target.value)} />
+          <input className="border rounded px-3 py-2" placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} />
         </div>
 
-        <label className="block text-sm mt-4 mb-1">Summary</label>
-        <textarea
-          className="border rounded w-full p-2 min-h-[140px]"
-          value={form.summary ?? ""}
-          onChange={(e) => setField("summary", e.target.value)}
-        />
+        <input className="border rounded px-3 py-2 w-full" placeholder="Street address" value={address} onChange={(e) => setAddress(e.target.value)} />
 
-        <div className="flex gap-3 mt-4">
-          <button
-            disabled={busy}
-            onClick={handleSave}
-            className="px-4 py-2 rounded bg-emerald-600 text-white"
-          >
-            {editing ? "Update Clinic" : "Add Clinic"}
-          </button>
-          <button
-            disabled={busy || !form.url}
-            onClick={handleGenerateSummary}
-            className="px-4 py-2 rounded bg-indigo-600 text-white disabled:opacity-60"
-            title={!form.url ? "Enter the clinic website URL first" : ""}
-          >
-            {busy ? "Fetching…" : "Generate Summary"}
-          </button>
-          <button onClick={startAdd} className="px-4 py-2 rounded border">
-            Cancel
-          </button>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <input className="border rounded px-3 py-2" placeholder="Website URL" value={url} onChange={(e) => setUrl(e.target.value)} />
+          <div className="flex gap-2">
+            <button type="button" onClick={autofillFromWebsite} className="border rounded px-3 py-2" disabled={busy}>
+              {busy ? "Auto-filling…" : "Auto-fill from website"}
+            </button>
+          </div>
         </div>
-      </div>
 
-      <div className="rounded border bg-white overflow-x-auto">
-        <table className="min-w-full text-sm">
-          <thead>
-            <tr className="border-b bg-gray-50">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <input className="border rounded px-3 py-2" placeholder="Phone (optional)" value={phone} onChange={(e) => setPhone(e.target.value)} />
+          <input className="border rounded px-3 py-2" placeholder="Photo URL (optional)" value={photoUrl} onChange={(e) => setPhotoUrl(e.target.value)} />
+        </div>
+
+        <input className="border rounded px-3 py-2 w-full" placeholder="Services (comma-separated)" value={servicesInput} onChange={(e) => setServicesInput(e.target.value)} />
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <input className="border rounded px-3 py-2" placeholder="Languages (comma-separated)" value={languagesInput} onChange={(e) => setLanguagesInput(e.target.value)} />
+          <input className="border rounded px-3 py-2" placeholder="Eligibility (comma-separated)" value={eligibilityInput} onChange={(e) => setEligibilityInput(e.target.value)} />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div className="flex gap-2">
+            <input className="border rounded px-3 py-2 w-full" placeholder="Latitude" value={lat} onChange={(e) => setLat(e.target.value)} />
+            <input className="border rounded px-3 py-2 w-full" placeholder="Longitude" value={lng} onChange={(e) => setLng(e.target.value)} />
+          </div>
+          <button type="button" onClick={geocodeAddress} className="border rounded px-3 py-2">Geocode address</button>
+          <label className="inline-flex items-center gap-2">
+            <input type="checkbox" checked={verified} onChange={() => setVerified(!verified)} />
+            Verified
+          </label>
+        </div>
+
+        {/* Hours */}
+        <div className="grid grid-cols-2 md:grid-cols-7 gap-2">
+          {DAYS.map((d) => (
+            <div key={d} className="flex flex-col">
+              <label className="text-xs opacity-70 mb-1">{d}</label>
+              <input
+                className="border rounded px-2 py-1 text-sm"
+                placeholder='e.g., 9–5 or "Closed"'
+                value={hours[d] || ""}
+                onChange={(e) => setHours({ ...hours, [d]: e.target.value })}
+              />
+            </div>
+          ))}
+        </div>
+
+        <textarea className="border rounded px-3 py-2 w-full h-28" placeholder="Summary" value={summary} onChange={(e) => setSummary(e.target.value)} />
+
+        <div className="flex gap-2">
+          <button type="submit" className="px-3 py-2 rounded bg-emerald-600 text-white">Save Clinic</button>
+          <button type="button" onClick={() => setSummary(buildSummary({ servicesInput, languagesInput, eligibilityInput }))} className="px-3 py-2 border rounded">
+            Generate Summary
+          </button>
+          <button type="button" onClick={resetForm} className="px-3 py-2 border rounded">Cancel</button>
+        </div>
+      </form>
+
+      {/* Table */}
+      <div className="mt-6 rounded-lg border overflow-x-auto bg-white">
+        <table className="w-full text-sm">
+          <thead className="bg-gray-50">
+            <tr>
               <th className="text-left px-3 py-2">Name</th>
               <th className="text-left px-3 py-2">Address</th>
               <th className="text-left px-3 py-2">Services</th>
-              <th className="text-left px-3 py-2">Summary</th>
+              <th className="text-left px-3 py-2">Verified</th>
               <th className="text-left px-3 py-2">Actions</th>
             </tr>
           </thead>
           <tbody>
-            {rows.map((r) => (
-              <tr key={r.docId} className="border-b">
-                <td className="px-3 py-2">{r.name}</td>
-                <td className="px-3 py-2">{r.address}</td>
-                <td className="px-3 py-2">{r.services.join(", ")}</td>
-                <td className="px-3 py-2 truncate max-w-[260px]">
-                  {r.summary ? r.summary.slice(0, 80) : "—"}
-                </td>
-                <td className="px-3 py-2 flex gap-2">
-                  <button
-                    className="px-2 py-1 border rounded"
-                    onClick={() => startEdit(r)}
-                  >
-                    Edit
-                  </button>
-                  <a
-                    className="px-2 py-1 border rounded"
-                    href={r.url}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    Website
-                  </a>
-                  <button
-                    className="px-2 py-1 border rounded text-red-600"
-                    onClick={() => handleDelete(r.docId)}
-                  >
-                    Delete
-                  </button>
+            {loading && (
+              <tr>
+                <td className="px-3 py-2" colSpan={5}>
+                  Loading…
                 </td>
               </tr>
-            ))}
-            {!rows.length && (
+            )}
+            {!loading &&
+              clinics.map((c) => (
+                <tr key={c.id} className="border-t">
+                  <td className="px-3 py-2">{c.name}</td>
+                  <td className="px-3 py-2">{c.address}</td>
+                  <td className="px-3 py-2">{(c.services || []).join(", ")}</td>
+                  <td className="px-3 py-2">{c.verified ? "✅" : ""}</td>
+                  <td className="px-3 py-2">
+                    <div className="flex gap-2">
+                      <button className="px-2 py-1 border rounded" onClick={() => loadForEdit(c)}>
+                        Edit
+                      </button>
+                      {c.url && (
+                        <a href={c.url} target="_blank" rel="noreferrer" className="px-2 py-1 border rounded">
+                          Website
+                        </a>
+                      )}
+                      <Link href={`/finder/${encodeURIComponent(c.slug ?? c.id)}`} className="px-2 py-1 border rounded">
+                        View
+                      </Link>
+                      <button className="px-2 py-1 border rounded text-red-700" onClick={() => removeClinic(c.id)}>
+                        Delete
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            {!loading && clinics.length === 0 && (
               <tr>
-                <td className="px-3 py-4 text-gray-600" colSpan={5}>
+                <td className="px-3 py-2" colSpan={5}>
                   No clinics yet.
                 </td>
               </tr>
@@ -394,4 +377,24 @@ export default function AdminPageInner() {
       </div>
     </div>
   );
+}
+
+function buildSummary({
+  servicesInput,
+  languagesInput,
+  eligibilityInput,
+}: {
+  servicesInput: string;
+  languagesInput: string;
+  eligibilityInput: string;
+}) {
+  const parts: string[] = [];
+  const svcs = parseCSV(servicesInput);
+  const langs = parseCSV(languagesInput);
+  const elig = parseCSV(eligibilityInput);
+  if (svcs.length) parts.push(`Services: ${svcs.join(", ")}.`);
+  if (langs.length) parts.push(`Languages: ${langs.join(", ")}.`);
+  if (elig.length) parts.push(`Eligibility: ${elig.join(", ")}.`);
+  parts.push("Call ahead to confirm hours and bring ID/insurance if available.");
+  return parts.join(" ");
 }
