@@ -1,10 +1,14 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 
-type AuthCtx = { user: User | null; loading: boolean };
+type AuthCtx = {
+  user: User | null;
+  loading: boolean;
+};
+
 const Ctx = createContext<AuthCtx>({ user: null, loading: true });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -13,13 +17,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (u) => {
-      setUser(u ?? null);
+      setUser(u);
       setLoading(false);
     });
     return () => unsub();
   }, []);
 
-  return <Ctx.Provider value={{ user, loading }}>{children}</Ctx.Provider>;
+  const value = useMemo(() => ({ user, loading }), [user, loading]);
+  return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 
 export function useAuth() {

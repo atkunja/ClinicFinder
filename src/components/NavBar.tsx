@@ -1,75 +1,52 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { onAuthStateChanged, signOut, User } from "firebase/auth";
+import { signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase";
+import { useAuth } from "@/components/AuthProvider";
+import { useMemo, useState } from "react";
 
-function isAllowed(email?: string | null) {
-  const raw =
-    (process.env.NEXT_PUBLIC_ADMIN_ALLOWLIST ||
-      // fall back to non-public var if you kept the old name
-      (process.env as any).ADMIN_ALLOWLIST ||
-      "") as string;
+const ALLOW = (process.env.NEXT_PUBLIC_ADMIN_ALLOWLIST || "")
+  .split(",")
+  .map((s) => s.trim().toLowerCase())
+  .filter(Boolean);
 
-  return raw
-    .split(",")
-    .map((s) => s.trim().toLowerCase())
-    .filter(Boolean)
-    .includes((email || "").toLowerCase());
+function isAllowlisted(email?: string | null) {
+  if (!email) return false;
+  return ALLOW.includes(email.toLowerCase());
 }
 
 export default function NavBar() {
   const pathname = usePathname();
   const router = useRouter();
+  const { user, loading } = useAuth();
+  const [busy, setBusy] = useState(false);
 
-  const [user, setUser] = useState<User | null>(null);
-  const [signingOut, setSigningOut] = useState(false);
-
-  useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (u) => setUser(u));
-    return () => unsub();
-  }, []);
-
-  const showAdmin = useMemo(() => isAllowed(user?.email), [user]);
-
-  const activeLink = (href: string) =>
+  const active = (href: string) =>
     pathname === href || (href !== "/" && pathname?.startsWith(href));
 
-  const NavLink = ({
-    href,
-    label,
-  }: {
-    href: string;
-    label: string;
-  }) => (
-    <Link
-      href={href}
-      className={`px-3 py-2 rounded-lg text-sm transition-colors ${
-        activeLink(href) ? "text-slate-900" : "text-slate-700"
-      } hover:text-slate-900 hover:underline underline-offset-4`}
-    >
-      {label}
-    </Link>
-  );
+  const showAdmin = useMemo(() => isAllowlisted(user?.email), [user]);
 
   async function handleSignOut() {
     try {
-      setSigningOut(true);
+      setBusy(true);
       await signOut(auth);
-      // after sign out, go home (UI will switch to "Log in")
+      // make sure UI updates immediately
       router.push("/");
+      router.refresh();
     } catch (e) {
-      console.error(e);
-      setSigningOut(false);
+      console.error("signOut error", e);
+      // fall back to hard reload if something is stuck
+      window.location.href = "/";
+    } finally {
+      setBusy(false);
     }
   }
 
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-white/90 backdrop-blur">
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
-        {/* Brand */}
         <Link href="/" className="flex items-center gap-2">
           <span
             aria-hidden
@@ -82,29 +59,66 @@ export default function NavBar() {
           <span className="font-semibold text-slate-900">Healthcare for All</span>
         </Link>
 
-        {/* Right-side nav */}
         <nav className="flex items-center gap-1">
-          <NavLink href="/" label="Home" />
-          <NavLink href="/finder" label="Clinic Finder" />
-          <NavLink href="/what-to-bring" label="What to Bring" />
-          {showAdmin && <NavLink href="/admin" label="Admin" />}
+          <Link
+            href="/"
+            className={`px-3 py-2 rounded-lg text-sm transition-colors ${
+              active("/") ? "text-slate-900" : "text-slate-700"
+            } hover:text-slate-900 hover:underline underline-offset-4`}
+          >
+            Home
+          </Link>
 
-          {/* Auth button */}
-          {user ? (
-            <button
-              onClick={handleSignOut}
-              disabled={signingOut}
-              className="ml-1 inline-flex items-center rounded-full border px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50 disabled:opacity-60"
-            >
-              {signingOut ? "Signing out…" : "Sign out"}
-            </button>
-          ) : (
+          <Link
+            href="/finder"
+            className={`px-3 py-2 rounded-lg text-sm transition-colors ${
+              active("/finder") ? "text-slate-900" : "text-slate-700"
+            } hover:text-slate-900 hover:underline underline-offset-4`}
+          >
+            Clinic Finder
+          </Link>
+
+          <Link
+            href="/what-to-bring"
+            className={`px-3 py-2 rounded-lg text-sm transition-colors ${
+              active("/what-to-bring") ? "text-slate-900" : "text-slate-700"
+            } hover:text-slate-900 hover:underline underline-offset-4`}
+          >
+            What to Bring
+          </Link>
+
+          {/* Admin only for allowlisted users */}
+          {showAdmin && (
             <Link
-              href="/auth/login"
-              className="ml-1 inline-flex items-center rounded-full bg-emerald-600 px-3 py-1.5 text-sm text-white shadow-sm hover:bg-emerald-700"
+              href="/admin"
+              className={`px-3 py-2 rounded-lg text-sm transition-colors ${
+                active("/admin") ? "text-slate-900" : "text-slate-700"
+              } hover:text-slate-900 hover:underline underline-offset-4`}
             >
-              Log in
+              Admin
             </Link>
+          )}
+
+          {/* Rightmost auth button */}
+          {!loading && (
+            <>
+              {user ? (
+                <button
+                  onClick={handleSignOut}
+                  disabled={busy}
+                  className="ml-2 rounded-full border px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50 disabled:opacity-60"
+                >
+                  {busy ? "Signing out…" : "Sign out"}
+                </button>
+              ) : (
+                <Link
+                  href="/login"
+                  className="ml-2 rounded-full border px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50"
+                >
+                  Log in
+                </Link>
+              )}
+            </>
           )}
         </nav>
       </div>
