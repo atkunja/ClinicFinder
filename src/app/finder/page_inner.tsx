@@ -1,4 +1,3 @@
-// src/app/finder/page_inner.tsx
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -9,7 +8,7 @@ import Results from "./results";
 import "leaflet/dist/leaflet.css";
 import RequireAuth from "@/components/RequireAuth";
 
-// lazy map
+// Map component (your existing one)
 const ClinicMap = dynamic(() => import("@/components/ClinicMap"), { ssr: false });
 
 type Coords = [number, number];
@@ -61,16 +60,7 @@ function useDebounced<T>(value: T, ms = 250) {
 
 type Suggest = { label: string; lat: number; lon: number };
 
-export default function FinderInner() {
-  // 🔐 gate whole finder behind auth
-  return (
-    <RequireAuth>
-      <FinderUI />
-    </RequireAuth>
-  );
-}
-
-function FinderUI() {
+export default function FinderPage() {
   const [clinics, setClinics] = useState<Clinic[]>([]);
   const [serviceFilter, setServiceFilter] = useState("");
   const [onlyVerified, setOnlyVerified] = useState(false);
@@ -88,7 +78,7 @@ function FinderUI() {
 
   // Firestore subscribe
   useEffect(() => {
-    const ref = collection(db, "clinics"); // lowercase collection name
+    const ref = collection(db, "clinics");
     const unsub = onSnapshot(
       ref,
       (snap) => {
@@ -102,15 +92,12 @@ function FinderUI() {
           .filter(Boolean) as Clinic[];
         setClinics(rows);
       },
-      (err) => {
-        console.error("clinics onSnapshot error:", err);
-        alert(`Firestore error: ${err.message}`);
-      }
+      (err) => console.error("onSnapshot error:", err)
     );
     return () => unsub();
   }, []);
 
-  // Geocode suggestions via your /api/geocode proxy
+  // Geocode suggestions
   useEffect(() => {
     let ignore = false;
     async function run() {
@@ -128,12 +115,10 @@ function FinderUI() {
       }
     }
     run();
-    return () => {
-      ignore = true;
-    };
+    return () => { ignore = true; };
   }, [debouncedQ]);
 
-  // Close dropdown click-outside
+  // Close dropdown when clicking outside
   useEffect(() => {
     function onDoc(e: MouseEvent) {
       if (!dropdownRef.current) return;
@@ -163,6 +148,7 @@ function FinderUI() {
   }
 
   const visibleClinics = useMemo(() => {
+    if (!userCoords) return [];
     return clinics
       .filter((c) =>
         serviceFilter
@@ -184,127 +170,129 @@ function FinderUI() {
   const serviceChips = ["Medical", "Dental", "Mental", "Pediatrics", "Pharmacy", "Vision"];
 
   return (
-    <div className="min-h-screen bg-[rgb(247,249,251)] text-slate-900">
-      <div className="max-w-6xl mx-auto px-4 py-5">
-        {/* Controls */}
-        <div className="rounded-2xl bg-white border shadow-sm p-4 md:p-5 mb-5">
-          <div className="flex flex-col lg:flex-row lg:items-center gap-3">
-            {/* Address input + dropdown */}
-            <div className="relative w-full lg:max-w-xl" ref={dropdownRef}>
-              <label className="sr-only">Search by address</label>
-              <input
-                value={address}
-                onChange={(e) => {
-                  setAddress(e.target.value);
-                  setOpenDrop(true);
-                }}
-                onFocus={() => setOpenDrop(true)}
-                className="w-full rounded-xl border px-4 py-2.5 outline-none focus:ring-2 focus:ring-emerald-500"
-                placeholder="Enter address or city"
-              />
-              {openDrop && (
-                <div className="absolute z-20 mt-1 w-full max-h-64 overflow-auto rounded-xl border bg-white shadow-lg">
-                  {loadingDrop && (
-                    <div className="px-3 py-2 text-sm text-slate-500">Searching…</div>
-                  )}
-                  {!loadingDrop && suggestions.length === 0 && debouncedQ.length >= 3 && (
-                    <div className="px-3 py-2 text-sm text-slate-500">No matches</div>
-                  )}
-                  {suggestions.map((s, i) => (
-                    <button
-                      key={`${s.lat}${s.lon}${i}`}
-                      onClick={() => pickSuggestion(s)}
-                      className="w-full text-left px-3 py-2 hover:bg-emerald-50"
-                    >
-                      <div className="text-sm">{s.label}</div>
-                    </button>
+    <RequireAuth>
+      <div className="min-h-screen bg-[rgb(247,249,251)] text-slate-900">
+        <div className="max-w-6xl mx-auto px-4 py-5">
+          {/* Header / Controls */}
+          <div className="rounded-2xl bg-white border shadow-sm p-4 md:p-5 mb-5">
+            <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+              {/* Address input + dropdown */}
+              <div className="relative w-full lg:max-w-xl" ref={dropdownRef}>
+                <label className="sr-only">Search by address</label>
+                <input
+                  value={address}
+                  onChange={(e) => { setAddress(e.target.value); setOpenDrop(true); }}
+                  onFocus={() => setOpenDrop(true)}
+                  className="w-full rounded-xl border px-4 py-2.5 outline-none focus:ring-2 focus:ring-emerald-500"
+                  placeholder="Enter address or city"
+                />
+                {openDrop && (
+                  <div className="absolute z-20 mt-1 w-full max-h-64 overflow-auto rounded-xl border bg-white shadow-lg">
+                    {loadingDrop && <div className="px-3 py-2 text-sm text-slate-500">Searching…</div>}
+                    {!loadingDrop && suggestions.length === 0 && debouncedQ.length >= 3 && (
+                      <div className="px-3 py-2 text-sm text-slate-500">No matches</div>
+                    )}
+                    {suggestions.map((s, i) => (
+                      <button
+                        key={`${s.lat}${s.lon}${i}`}
+                        onClick={() => pickSuggestion(s)}
+                        className="w-full text-left px-3 py-2 hover:bg-emerald-50"
+                      >
+                        <div className="text-sm">{s.label}</div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Buttons */}
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={useMyLocation}
+                  className="rounded-xl bg-emerald-600 text-white px-4 py-2 hover:bg-emerald-700"
+                >
+                  Use my location
+                </button>
+                <select
+                  value={radiusMiles}
+                  onChange={(e) => setRadiusMiles(Number(e.target.value))}
+                  className="rounded-xl border px-3 py-2"
+                  aria-label="Radius"
+                >
+                  {[10, 25, 50, 100].map((r) => (
+                    <option key={r} value={r}>{r} mi</option>
                   ))}
-                </div>
+                </select>
+                <label className="inline-flex items-center gap-2 text-sm ml-1">
+                  <input
+                    type="checkbox"
+                    checked={onlyVerified}
+                    onChange={() => setOnlyVerified(v => !v)}
+                    className="h-4 w-4 accent-emerald-600"
+                  />
+                  Show verified only
+                </label>
+              </div>
+            </div>
+
+            {/* Service chips */}
+            <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
+              {serviceChips.map((chip) => {
+                const active = serviceFilter.toLowerCase() === chip.toLowerCase();
+                return (
+                  <button
+                    key={chip}
+                    onClick={() => setServiceFilter(active ? "" : chip)}
+                    className={`whitespace-nowrap rounded-full border px-3 py-1.5 text-sm ${
+                      active
+                        ? "bg-emerald-600 text-white border-emerald-600"
+                        : "bg-white hover:bg-slate-50"
+                    }`}
+                  >
+                    {chip}
+                  </button>
+                );
+              })}
+              {serviceFilter && (
+                <button
+                  onClick={() => setServiceFilter("")}
+                  className="rounded-full border px-3 py-1.5 text-sm bg-white hover:bg-slate-50"
+                >
+                  Clear
+                </button>
               )}
             </div>
+          </div>
 
-            {/* Buttons */}
-            <div className="flex items-center gap-2">
-              <button
-                onClick={useMyLocation}
-                className="rounded-xl bg-emerald-600 text-white px-4 py-2 hover:bg-emerald-700"
-              >
-                Use my location
-              </button>
-              <select
-                value={radiusMiles}
-                onChange={(e) => setRadiusMiles(Number(e.target.value))}
-                className="rounded-xl border px-3 py-2"
-                aria-label="Radius"
-              >
-                {[10, 25, 50, 100].map((r) => (
-                  <option key={r} value={r}>
-                    {r} mi
-                  </option>
-                ))}
-              </select>
-              <label className="inline-flex items-center gap-2 text-sm ml-1">
-                <input
-                  type="checkbox"
-                  checked={onlyVerified}
-                  onChange={() => setOnlyVerified((v) => !v)}
-                  className="h-4 w-4 accent-emerald-600"
+          {/* Map + List only after location is set */}
+          {userCoords ? (
+            <>
+              <div className="rounded-2xl border shadow-sm overflow-hidden bg-white">
+                <div className="p-2 sm:p-3">
+                  <ClinicMap
+                    clinics={visibleClinics as any}
+                    userCoords={userCoords}
+                    radiusMiles={radiusMiles}
+                    selectedClinicId={selectedClinicId}
+                  />
+                </div>
+              </div>
+
+              <div className="mt-5">
+                <Results
+                  clinics={visibleClinics as any}
+                  onHover={(id) => setSelectedClinicId(id)}
+                  onLeave={() => setSelectedClinicId(null)}
                 />
-                Show verified only
-              </label>
+              </div>
+            </>
+          ) : (
+            <div className="mt-5 text-center text-slate-600">
+              <p>Please enter your address or use your location to find nearby clinics.</p>
             </div>
-          </div>
-
-          {/* Service chips */}
-          <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
-            {serviceChips.map((chip) => {
-              const active = serviceFilter.toLowerCase() === chip.toLowerCase();
-              return (
-                <button
-                  key={chip}
-                  onClick={() => setServiceFilter(active ? "" : chip)}
-                  className={`whitespace-nowrap rounded-full border px-3 py-1.5 text-sm ${
-                    active
-                      ? "bg-emerald-600 text-white border-emerald-600"
-                      : "bg-white hover:bg-slate-50"
-                  }`}
-                >
-                  {chip}
-                </button>
-              );
-            })}
-            {serviceFilter && (
-              <button
-                onClick={() => setServiceFilter("")}
-                className="rounded-full border px-3 py-1.5 text-sm bg-white hover:bg-slate-50"
-              >
-                Clear
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Map */}
-        <div className="rounded-2xl border shadow-sm overflow-hidden bg-white">
-          <div className="p-2 sm:p-3">
-            <ClinicMap
-              clinics={visibleClinics as any}
-              userCoords={userCoords}
-              radiusMiles={radiusMiles}
-              selectedClinicId={selectedClinicId}
-            />
-          </div>
-        </div>
-
-        {/* List */}
-        <div className="mt-5">
-          <Results
-            clinics={visibleClinics as any}
-            onHover={(id) => setSelectedClinicId(id)}
-            onLeave={() => setSelectedClinicId(null)}
-          />
+          )}
         </div>
       </div>
-    </div>
+    </RequireAuth>
   );
 }
