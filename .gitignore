@@ -1,44 +1,47 @@
-# Node dependencies
+# Node
 node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
-
-# Local env files
-.env
-.env.*.local
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-
-# Firebase service account keys
-*.secret.json
-firebase-adminsdk-*.json
+.pnpm-debug.log*
 
 # Next.js build output
 .next/
 out/
-
-# Local build caches
-.cache/
-.next/cache/
 dist/
-functions/lib/
-functions/node_modules/
 
-# Mac / OS generated files
-.DS_Store
-Thumbs.db
+# Local env files
+.env
+.env.*       # covers .env.local, .env.development, etc.
 
-# VSCode
-.vscode/
+# Firebase credentials (service accounts, keys)
+*.pem
+*.p12
+*.key.json
 
 # Logs
 logs
 *.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+lerna-debug.log*
 
-# Temporary files
-tmp/
-temp/
+# Mac / system
+.DS_Store
+*.swp
+*.swo
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.iml
+
+# Coverage / test
+coverage/
+*.lcov
+
+# Misc
+*.local
