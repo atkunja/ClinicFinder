@@ -1,36 +1,37 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+💙 Bibi Foundation — Clinic Access Network
 
-## Getting Started
+Bibi Foundation connects communities with free and low-cost medical, dental, and mental health care across the region.
+We partner with clinics, volunteers, and social workers to make finding care easy, human, and trustworthy.
 
-First, run the development server:
+🌍 Mission
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+Our mission is to make healthcare accessible to everyone — regardless of income, insurance status, or background.
+We believe healthcare is a right, not a privilege. Through digital tools and outreach programs, we help people:
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Find verified free or affordable clinics
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Prepare for their visits with guidance and checklists
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Access community-driven resources
 
-## Learn More
+Connect with volunteer health navigators
 
-To learn more about Next.js, take a look at the following resources:
+✨ Features
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Clinic Finder – Search by service, language, and distance.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Verified Listings – Every clinic is reviewed by our volunteer network.
 
-## Deploy on Vercel
+Visit Preparation – “What to Bring” checklist for first-time visitors.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Privacy-Friendly – No personal data shared without consent.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Admin Dashboard – Tools for staff to verify and update clinic data.
+
+🧩 Tech Stack
+
+Frontend: Next.js, React, Tailwind CSS, Typesript
+Backend: Node.js 
+Database: Firebase 
+Hosting: Vercel
+Maps: Leaflet or Mapbox
