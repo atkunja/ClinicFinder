@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 export const runtime = "nodejs";
 
@@ -17,6 +18,8 @@ type IngestResult = {
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const GEMINI_MODEL = process.env.GEMINI_MODEL ?? "gemini-1.5-flash";
+
+const geminiClient = GEMINI_API_KEY ? new GoogleGenerativeAI(GEMINI_API_KEY) : null;
 
 function stripCodeFence(s: string) {
   return s.replace(/^```(?:json)?/i, "").replace(/```$/i, "").trim();
@@ -105,38 +108,23 @@ async function geocode(address?: string): Promise<[number, number] | undefined> 
 }
 
 async function callGeminiIngest(html: string, siteUrl: string): Promise<IngestResult | null> {
-  if (!GEMINI_API_KEY) return null;
+  if (!geminiClient) return null;
 
   const instructions = `Return ONLY compact JSON for a public clinic's details. Keys: name,address,phone,website,summary, services[],languages[],eligibility[], hours{Mon,Tue,Wed,Thu,Fri,Sat,Sun}. Prefer short, human-friendly values. If unknown: empty string or []. Website must be the original URL if not found.`;
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      systemInstruction: {
-        role: "system",
-        parts: [{ text: instructions }],
+  const model = geminiClient.getGenerativeModel({ model: GEMINI_MODEL });
+
+  const response = await model.generateContent({
+    systemInstruction: { role: "system", parts: [{ text: instructions }] },
+    contents: [
+      {
+        role: "user",
+        parts: [{ text: `HTML_START\n${html.slice(0, 200000)}\nHTML_END` }],
       },
-      contents: [
-        {
-          role: "user",
-          parts: [{ text: `HTML_START\n${html.slice(0, 200000)}\nHTML_END` }],
-        },
-      ],
-      generationConfig: { temperature: 0.1 },
-    }),
+    ],
+    generationConfig: { temperature: 0.1 },
   });
 
-  if (!res.ok) throw new Error(`Gemini ingest request failed (${res.status})`);
-
-  const data = await res.json();
-  const parts = data?.candidates?.[0]?.content?.parts;
-  const text = Array.isArray(parts)
-    ? parts
-        .map((part: any) => (typeof part?.text === "string" ? part.text : ""))
-        .join("\n")
-        .trim()
-    : "";
+  const text = response.response?.text?.();
   if (!text) return null;
   const json = stripCodeFence(text);
   const out = JSON.parse(json) as IngestResult;

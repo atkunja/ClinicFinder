@@ -12,6 +12,8 @@ type Intent =
   | "contact_info"
   | "unknown";
 
+import { GoogleGenerativeAI } from "@google/generative-ai";
+
 const DURATION_REGEX = /(\d+\s*(?:minutes?|hours?|days?|weeks?|months?|years?))/gi;
 const BARRIER_KEYWORDS = [
   { key: "transport", aliases: ["transport", "bus", "ride", "car"] },
@@ -59,6 +61,8 @@ const OPEN_AI_MODEL = process.env.OPEN_AI_MODEL ?? "gpt-4o-mini";
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const GEMINI_MODEL = process.env.GEMINI_MODEL ?? "gemini-1.5-flash";
+
+const geminiClient = GEMINI_API_KEY ? new GoogleGenerativeAI(GEMINI_API_KEY) : null;
 
 function collectUserText(history: ChatMessage[]): string {
   return history
@@ -116,6 +120,10 @@ function summarizeSymptoms(text: string): string {
   return ranked.length ? ranked.join(", ") : "not clearly specified";
 }
 
+const GENERIC_SUMMARY_TERMS = new Set([
+  "hi","hello","what","help","please","question","thanks","thank",
+]);
+
 function detectIntent(message: string): Intent {
   if (!message.trim()) return "unknown";
   const lower = message.toLowerCase();
@@ -135,16 +143,14 @@ function inferCondition(text: string): { condition: string; clinic: string } | n
   return null;
 }
 
-function prepareGeminiPrompt(systemPrompt: string, history: ChatMessage[]) {
+function toGeminiContents(history: ChatMessage[]) {
   const trimmed = [...history];
   while (trimmed.length && trimmed[0].role !== "user") trimmed.shift();
-  if (!trimmed.length) return null;
-
-  const transcript = trimmed
-    .map((message) => `${message.role === "assistant" ? "Assistant" : "User"}: ${message.content}`)
-    .join("\n");
-
-  return `${systemPrompt}\n\nConversation so far:\n${transcript}`.trim();
+  if (!trimmed.length) return [];
+  return trimmed.map((message) => ({
+    role: message.role === "assistant" ? "model" : "user",
+    parts: [{ text: message.content }],
+  }));
 }
 
 async function callCustomService({
@@ -217,38 +223,23 @@ async function callGemini({
 }): Promise<string | null> {
   if (!GEMINI_API_KEY) return null;
 
-  const prompt = prepareGeminiPrompt(systemPrompt, history);
-  if (!prompt) return null;
+  if (!geminiClient) return null;
 
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      contents: [
-        {
-          role: "user",
-          parts: [{ text: prompt }],
-        },
-      ],
-      generationConfig: { temperature: 0.2 },
-    }),
+  const contents = toGeminiContents(history);
+  if (!contents.length) return null;
+
+  const model = geminiClient.getGenerativeModel({ model: GEMINI_MODEL });
+
+  const response = await model.generateContent({
+    systemInstruction: systemPrompt
+      ? { role: "system", parts: [{ text: systemPrompt }] }
+      : undefined,
+    contents,
+    generationConfig: { temperature: 0.2 },
   });
 
-  if (!res.ok) {
-    const errText = await res.text().catch(() => "");
-    throw new Error(`Gemini request failed (${res.status}): ${errText}`);
-  }
-
-  const data = await res.json();
-  const parts = data?.candidates?.[0]?.content?.parts;
-  const text = Array.isArray(parts)
-    ? parts
-        .map((part: any) => (typeof part?.text === "string" ? part.text : ""))
-        .join("\n")
-        .trim()
-    : null;
-  return text && text.length ? text : null;
+  const text = response.response?.text?.();
+  return text && text.trim().length ? text.trim() : null;
 }
 
 function buildHeuristicResponse(history: ChatMessage[]): string {
@@ -268,6 +259,14 @@ function buildHeuristicResponse(history: ChatMessage[]): string {
 
   if (!latestUser.trim()) {
     return "Could you share a bit about the symptoms or concerns you want to talk through today?";
+  }
+
+  const summaryTokens = symptomsSummary.split(/,\s*/).filter(Boolean);
+  if (
+    symptomsSummary === "not clearly specified" ||
+    (summaryTokens.length <= 2 && summaryTokens.every((token) => GENERIC_SUMMARY_TERMS.has(token)))
+  ) {
+    return "I want to make sure I guide you to the right clinic. Could you describe the symptoms you’re feeling, when they started, and anything that makes them better or worse?";
   }
 
   const lines = [
