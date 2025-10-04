@@ -34,7 +34,7 @@ export default function Footer() {
             >
               <span className="text-sm font-bold text-white">BF</span>
             </span>
-            Bibi Foundation
+            SolvraFoundation
           </Link>
           <p className="text-sm text-slate-200/80">
             A volunteer-built project connecting people with compassionate, free or low-cost care across Southeast Michigan. We believe healthcare is a right, not a luxury.
@@ -93,7 +93,7 @@ export default function Footer() {
       </div>
 
       <div className="relative border-t border-white/10 bg-slate-900/60 py-4 text-center text-xs text-slate-300/70">
-        © {new Date().getFullYear()} Bibi Foundation. Built with community partners and volunteer clinicians.
+        © {new Date().getFullYear()} SolvraFoundation. Built with community partners and volunteer clinicians.
      </div>
     </footer>
   );

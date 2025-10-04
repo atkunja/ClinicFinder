@@ -1,6 +1,6 @@
-💙 Bibi Foundation — Clinic Access Network
+💙 SolvraFoundation — Clinic Access Network
 
-Bibi Foundation connects communities with free and low-cost medical, dental, and mental health care across the region.
+SolvraFoundation connects communities with free and low-cost medical, dental, and mental health care across the region.
 We partner with clinics, volunteers, and social workers to make finding care easy, human, and trustworthy.
 
 🌍 Mission

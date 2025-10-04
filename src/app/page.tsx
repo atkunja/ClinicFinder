@@ -88,7 +88,7 @@ const faqs = [
 ];
 
 export const metadata = {
-  title: "Bibi Foundation",
+  title: "SolvraFoundation",
   description: "Find free or low-cost healthcare clinics near you",
 };
 
@@ -206,7 +206,7 @@ export default function HomePage() {
             <div className="space-y-5">
               <h2 className="text-3xl font-semibold text-slate-900">Your path to care starts with clarity</h2>
               <p className="text-base text-slate-600">
-                We designed Bibi Foundation to guide you from feeling stuck to being seen by the right clinician. The pathway is the same whether you are searching for yourself, a loved one, or someone you support professionally.
+                We designed SolvraFoundation to guide you from feeling stuck to being seen by the right clinician. The pathway is the same whether you are searching for yourself, a loved one, or someone you support professionally.
               </p>
               <Link
                 href="/finder"
@@ -289,7 +289,7 @@ export default function HomePage() {
             <div>
               <h3 className="text-lg font-semibold text-slate-900">We never sell your data</h3>
               <p className="mt-3 text-sm text-slate-600">
-                Bibi Foundation is run by volunteers and backed by community grants. Your searches stay private, and clinics only see your information when you contact them directly.
+                SolvraFoundation is run by volunteers and backed by community grants. Your searches stay private, and clinics only see your information when you contact them directly.
               </p>
             </div>
             <div className="space-y-3 text-sm text-slate-600">
@@ -345,7 +345,7 @@ export default function HomePage() {
           <div className="relative space-y-6">
             <h2 className="text-3xl font-semibold">Ready when you are</h2>
             <p className="text-base text-slate-800">
-              Whether this is your first visit or you are coordinating care for an entire shelter, Bibi Foundation gives you a calm starting point. Log in for volunteer tools or jump straight into the finder.
+              Whether this is your first visit or you are coordinating care for an entire shelter, SolvraFoundation gives you a calm starting point. Log in for volunteer tools or jump straight into the finder.
             </p>
             <div className="flex flex-wrap gap-3">
               <Link

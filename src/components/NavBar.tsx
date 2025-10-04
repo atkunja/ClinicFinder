@@ -69,7 +69,7 @@ export default function NavBar() {
             <span className="text-sm font-bold tracking-wide">BF</span>
           </span>
           <div className="flex flex-col">
-            <span className="text-sm font-semibold leading-tight">Bibi Foundation</span>
+            <span className="text-sm font-semibold leading-tight">SolvraFoundation</span>
             <span className="text-[11px] uppercase tracking-[0.3em] text-white/60">
               Clinic access network
             </span>
