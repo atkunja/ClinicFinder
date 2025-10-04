@@ -5,6 +5,13 @@ export type ChatMessage = {
   content: string;
 };
 
+type Intent =
+  | "greeting"
+  | "closing"
+  | "symptom_detail"
+  | "contact_info"
+  | "unknown";
+
 const DURATION_REGEX = /(\d+\s*(?:minutes?|hours?|days?|weeks?|months?|years?))/gi;
 const BARRIER_KEYWORDS = [
   { key: "transport", aliases: ["transport", "bus", "ride", "car"] },
@@ -23,6 +30,25 @@ const CARE_PATTERNS: Array<{ keywords: RegExp; recommendation: string }> = [
 ];
 
 const EMERGENCY_KEYWORDS = /(chest pain|shortness of breath|trouble breathing|can't breathe|stroke|numbness on one side|loss of vision|severe bleeding|suicidal|overdose|unconscious)/i;
+
+const GREETING_REGEX = /\b(hi|hello|hey|good\s+(?:morning|afternoon|evening)|what's up|help)\b/i;
+
+const CONDITION_PATTERNS: Array<{
+  keywords: RegExp;
+  condition: string;
+  clinic: string;
+}> = [
+  { keywords: /(abscess|infection|pus|swollen gum)/i, condition: "possible tooth abscess", clinic: "urgent dental clinic" },
+  { keywords: /(broken tooth|chipped tooth|tooth broke)/i, condition: "dental fracture", clinic: "emergency dental clinic" },
+  { keywords: /(bleeding gums|gum bleed)/i, condition: "gum disease or gingivitis", clinic: "dental clinic" },
+  { keywords: /(shortness of breath|difficulty breathing|tight chest)/i, condition: "respiratory distress", clinic: "urgent care or emergency room" },
+  { keywords: /(panic attack|anxiety attack|can't stop thinking)/i, condition: "panic or acute anxiety episode", clinic: "mental health counselor" },
+  { keywords: /(depression|hopeless|suicidal)/i, condition: "severe depression", clinic: "mental health crisis center" },
+  { keywords: /(rash|hives|itching)/i, condition: "skin rash or allergic reaction", clinic: "urgent care or dermatology" },
+  { keywords: /(stomach pain|abdominal pain|cramps)/i, condition: "abdominal pain", clinic: "urgent care or gastroenterology" },
+  { keywords: /(pregnant|pregnancy|prenatal)/i, condition: "pregnancy-related concern", clinic: "women's health clinic" },
+  { keywords: /(high blood pressure|hypertension)/i, condition: "hypertension", clinic: "primary care clinic" },
+];
 
 const TRIAGE_SERVICE_URL = process.env.TRIAGE_SERVICE_URL;
 const TRIAGE_SERVICE_KEY = process.env.TRIAGE_SERVICE_KEY;
@@ -87,6 +113,35 @@ function summarizeSymptoms(text: string): string {
     .map(([word]) => word);
 
   return ranked.length ? ranked.join(", ") : "not clearly specified";
+}
+
+function detectIntent(message: string): Intent {
+  if (!message.trim()) return "unknown";
+  const lower = message.toLowerCase();
+  if (/(thank you|thanks|bye|goodbye|talk later)/i.test(lower)) return "closing";
+  if (GREETING_REGEX.test(lower)) return "greeting";
+  if (/(address|where.*located|near me|close by)/i.test(lower)) return "contact_info";
+  if (lower.length > 10) return "symptom_detail";
+  return "unknown";
+}
+
+function inferCondition(text: string): { condition: string; clinic: string } | null {
+  for (const pattern of CONDITION_PATTERNS) {
+    if (pattern.keywords.test(text)) {
+      return { condition: pattern.condition, clinic: pattern.clinic };
+    }
+  }
+  return null;
+}
+
+function prepareGeminiContents(history: ChatMessage[]) {
+  const trimmed = [...history];
+  while (trimmed.length && trimmed[0].role !== "user") trimmed.shift();
+  if (!trimmed.length) return [];
+  return trimmed.map((message) => ({
+    role: toGeminiRole(message.role),
+    parts: [{ text: message.content }],
+  }));
 }
 
 async function callCustomService({
@@ -163,6 +218,9 @@ async function callGemini({
 }): Promise<string | null> {
   if (!GEMINI_API_KEY) return null;
 
+  const contents = prepareGeminiContents(history);
+  if (!contents.length) return null;
+
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
   const res = await fetch(url, {
     method: "POST",
@@ -172,10 +230,7 @@ async function callGemini({
         role: "system",
         parts: [{ text: systemPrompt }],
       },
-      contents: history.map((message) => ({
-        role: toGeminiRole(message.role),
-        parts: [{ text: message.content }],
-      })),
+      contents,
       generationConfig: { temperature: 0.2 },
     }),
   });
@@ -198,43 +253,66 @@ async function callGemini({
 function buildHeuristicResponse(history: ChatMessage[]): string {
   const userTranscript = collectUserText(history);
   const latestUser = [...history].reverse().find((msg) => msg.role === "user")?.content ?? "";
-  const durations = extractDurations(userTranscript);
+  const durationCues = extractDurations(userTranscript);
   const barriers = detectBarriers(userTranscript);
   const symptomsSummary = summarizeSymptoms(userTranscript);
   const careRecommendation = recommendCare(userTranscript);
   const urgent = EMERGENCY_KEYWORDS.test(userTranscript);
+  const intent = detectIntent(latestUser);
+  const inferred = inferCondition(userTranscript);
+
+  if (intent === "greeting" && !symptomsSummary || symptomsSummary === "not clearly specified") {
+    return "Hello! I’m here to help with medical, dental, and mental health questions. Tell me what symptoms you’re seeing, when they started, and anything that might make it hard to get care.";
+  }
+
+  if (!latestUser.trim()) {
+    return "Could you share a bit about the symptoms or concerns you want to talk through today?";
+  }
 
   const lines = [
-    "Here's what I captured so far:",
-    `• Key concerns mentioned: ${symptomsSummary}.`,
-    `• Most recent details: ${latestUser || "no new information provided yet."}`,
-    `• Duration cues: ${durations.length ? durations.join(", ") : "not mentioned"}.`,
-    `• Reported barriers: ${barriers.length ? barriers.join(", ") : "none noted"}.`,
+    "Here’s what I’m hearing so far:",
+    `• Main concerns: ${symptomsSummary}.`,
+    `• Latest details you mentioned: ${latestUser}.`,
+    `• Duration clues: ${durationCues.length ? durationCues.join(", ") : "not mentioned"}.`,
+    `• Barriers: ${barriers.length ? barriers.join(", ") : "none noted"}.`,
     "",
-    "Recommended next steps:",
   ];
 
-  if (urgent) {
+  if (inferred) {
     lines.push(
-      "1. Symptoms sound urgent. Call 911 or go to the nearest emergency room immediately.",
-      "2. If safe to do so, contact a trusted person or emergency contact to assist with transportation.",
-      "3. Bring any medications, ID, and insurance or financial aid documents with you."
+      `Based on what you shared, this could indicate ${inferred.condition}.`,
+      `Recommended clinic type: ${inferred.clinic}.`
+    );
+  } else {
+    lines.push(`Recommended clinic type: ${careRecommendation}.`);
+  }
+
+  lines.push(
+    "",
+    urgent
+      ? "This sounds urgent. Call 911 or go to the nearest emergency room right away."
+      : "Next steps:",
+  );
+
+  if (!urgent) {
+    lines.push(
+      "1. Reach out to the recommended clinic to describe symptoms and ask about availability.",
+      "2. Bring photo ID, insurance details (or proof of income if uninsured), and a list of medications.",
+      barriers.includes("transport")
+        ? "3. Ask the clinic about transportation help or bus vouchers."
+        : barriers.includes("language")
+        ? "3. Request interpreter support ahead of the visit."
+        : "3. Jot down questions about triggers, recent changes, and anything you want the clinician to focus on."
     );
   } else {
     lines.push(
-      `1. Follow up with a ${careRecommendation} to review symptoms in detail.`,
-      "2. Bring photo ID, insurance documents (or proof of income if uninsured), and a current medication list.",
-      barriers.includes("transport")
-        ? "3. Ask about transportation programs or bus vouchers when you call."
-        : barriers.includes("language")
-        ? "3. Request interpreter support or language services ahead of the visit."
-        : "3. Prepare questions about symptom changes, triggers, and available community resources."
+      "If safe, contact someone who can help with transportation and take your medications and ID with you."
     );
   }
 
   lines.push(
     "",
-    "Reminder: If new warning signs appear (difficulty breathing, severe bleeding, sudden confusion), seek emergency care right away."
+    "If new warning signs show up—like trouble breathing, severe bleeding, or sudden confusion—seek emergency care immediately."
   );
 
   return lines.join("\n");
