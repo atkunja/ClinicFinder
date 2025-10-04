@@ -24,6 +24,12 @@ const CARE_PATTERNS: Array<{ keywords: RegExp; recommendation: string }> = [
 
 const EMERGENCY_KEYWORDS = /(chest pain|shortness of breath|trouble breathing|can't breathe|stroke|numbness on one side|loss of vision|severe bleeding|suicidal|overdose|unconscious)/i;
 
+const TRIAGE_SERVICE_URL = process.env.TRIAGE_SERVICE_URL;
+const TRIAGE_SERVICE_KEY = process.env.TRIAGE_SERVICE_KEY;
+
+const OPEN_AI_KEY = process.env.OPEN_AI_KEY;
+const OPEN_AI_MODEL = process.env.OPEN_AI_MODEL ?? "gpt-4o-mini";
+
 function collectUserText(history: ChatMessage[]): string {
   return history
     .filter((msg) => msg.role === "user")
@@ -80,15 +86,68 @@ function summarizeSymptoms(text: string): string {
   return ranked.length ? ranked.join(", ") : "not clearly specified";
 }
 
-export async function runTriageCompletion({
+async function callCustomService({
   systemPrompt,
   history,
 }: {
   systemPrompt: string;
   history: ChatMessage[];
-}): Promise<string> {
-  void systemPrompt; // kept for parity with previous signature
+}): Promise<string | null> {
+  if (!TRIAGE_SERVICE_URL) return null;
 
+  const res = await fetch(TRIAGE_SERVICE_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(TRIAGE_SERVICE_KEY ? { Authorization: `Bearer ${TRIAGE_SERVICE_KEY}` } : {}),
+    },
+    body: JSON.stringify({ systemPrompt, history }),
+  });
+
+  if (!res.ok) {
+    throw new Error(`Custom triage service failed (${res.status})`);
+  }
+
+  const payload = await res.json().catch(() => null);
+  const message = typeof payload?.message === "string" ? payload.message.trim() : null;
+  return message && message.length ? message : null;
+}
+
+async function callOpenAI({
+  systemPrompt,
+  history,
+}: {
+  systemPrompt: string;
+  history: ChatMessage[];
+}): Promise<string | null> {
+  if (!OPEN_AI_KEY) return null;
+
+  const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${OPEN_AI_KEY}`,
+    },
+    body: JSON.stringify({
+      model: OPEN_AI_MODEL,
+      temperature: 0.2,
+      messages: [
+        { role: "system", content: systemPrompt },
+        ...history.map((message) => ({ role: message.role, content: message.content })),
+      ],
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`OpenAI request failed (${response.status})`);
+  }
+
+  const payload = await response.json();
+  const text = payload?.choices?.[0]?.message?.content?.trim?.();
+  return text && text.length ? text : null;
+}
+
+function buildHeuristicResponse(history: ChatMessage[]): string {
   const userTranscript = collectUserText(history);
   const latestUser = [...history].reverse().find((msg) => msg.role === "user")?.content ?? "";
   const durations = extractDurations(userTranscript);
@@ -131,4 +190,40 @@ export async function runTriageCompletion({
   );
 
   return lines.join("\n");
+}
+
+export async function runTriageCompletion({
+  systemPrompt,
+  history,
+}: {
+  systemPrompt: string;
+  history: ChatMessage[];
+}): Promise<string> {
+  const historyPayload: ChatMessage[] = history.map((msg) => ({
+    role: msg.role,
+    content: String(msg.content ?? ""),
+  }));
+
+  const attempts: Array<() => Promise<string | null>> = [];
+
+  if (TRIAGE_SERVICE_URL) {
+    attempts.push(() => callCustomService({ systemPrompt, history: historyPayload }));
+  }
+
+  if (OPEN_AI_KEY) {
+    attempts.push(() => callOpenAI({ systemPrompt, history: historyPayload }));
+  }
+
+  for (const attempt of attempts) {
+    try {
+      const result = await attempt();
+      if (result) {
+        return result;
+      }
+    } catch (error) {
+      console.error("triage-external-error", error);
+    }
+  }
+
+  return buildHeuristicResponse(historyPayload);
 }

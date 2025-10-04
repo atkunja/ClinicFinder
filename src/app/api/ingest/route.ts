@@ -15,6 +15,11 @@ type IngestResult = {
   coords?: [number, number];
 };
 
+const INGEST_SERVICE_URL = process.env.INGEST_SERVICE_URL;
+const INGEST_SERVICE_KEY = process.env.INGEST_SERVICE_KEY;
+const OPEN_AI_KEY = process.env.OPEN_AI_KEY;
+const OPEN_AI_MODEL = process.env.OPEN_AI_MODEL ?? "gpt-4o-mini";
+
 function stripCodeFence(s: string) {
   return s.replace(/^```(?:json)?/i, "").replace(/```$/i, "").trim();
 }
@@ -101,6 +106,61 @@ async function geocode(address?: string): Promise<[number, number] | undefined> 
   return [la, lo];
 }
 
+async function callCustomIngest(html: string, siteUrl: string): Promise<IngestResult | null> {
+  if (!INGEST_SERVICE_URL) return null;
+
+  const res = await fetch(INGEST_SERVICE_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(INGEST_SERVICE_KEY ? { Authorization: `Bearer ${INGEST_SERVICE_KEY}` } : {}),
+    },
+    body: JSON.stringify({ html, siteUrl }),
+  });
+
+  if (!res.ok) throw new Error(`Custom ingest service failed (${res.status})`);
+
+  const payload = await res.json().catch(() => null);
+  if (!payload) return null;
+  if (typeof payload === "string") {
+    return JSON.parse(payload) as IngestResult;
+  }
+  return payload as IngestResult;
+}
+
+async function callOpenAIIngest(html: string, siteUrl: string): Promise<IngestResult | null> {
+  if (!OPEN_AI_KEY) return null;
+
+  const instructions = `Return ONLY compact JSON for a public clinic's details. Keys: name,address,phone,website,summary, services[],languages[],eligibility[], hours{Mon,Tue,Wed,Thu,Fri,Sat,Sun}. Prefer short, human-friendly values. If unknown: empty string or []. Website must be the original URL if not found.`;
+  const resp = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${OPEN_AI_KEY}`,
+    },
+    body: JSON.stringify({
+      model: OPEN_AI_MODEL,
+      temperature: 0.1,
+      messages: [
+        { role: "system", content: instructions },
+        {
+          role: "user",
+          content: `HTML_START\n${html.slice(0, 200000)}\nHTML_END`,
+        },
+      ],
+    }),
+  });
+
+  if (!resp.ok) throw new Error(`OpenAI ingest request failed (${resp.status})`);
+
+  const data = await resp.json();
+  const json = stripCodeFence(data?.choices?.[0]?.message?.content ?? "");
+  if (!json) return null;
+  const out = JSON.parse(json) as IngestResult;
+  if (!out.website) out.website = siteUrl;
+  return out;
+}
+
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
@@ -110,8 +170,26 @@ export async function GET(req: Request) {
     const r = await fetch(siteUrl, { headers: { "User-Agent": "clinic-finder/1.0" } });
     const html = await r.text();
 
+    let out: IngestResult | null = null;
+    const attempts: Array<() => Promise<IngestResult | null>> = [];
+
+    if (INGEST_SERVICE_URL) attempts.push(() => callCustomIngest(html, siteUrl));
+    if (OPEN_AI_KEY) attempts.push(() => callOpenAIIngest(html, siteUrl));
+
+    for (const attempt of attempts) {
+      try {
+        const maybe = await attempt();
+        if (maybe) {
+          out = maybe;
+          break;
+        }
+      } catch (error) {
+        console.error("ingest-external-error", error);
+      }
+    }
+
     const fb = fallbackExtract(html, siteUrl);
-    const merged: IngestResult = { website: siteUrl, ...fb };
+    const merged: IngestResult = { website: siteUrl, ...fb, ...(out || {}) };
 
     if (merged.hours) {
       const norm: Record<string,string> = {};
