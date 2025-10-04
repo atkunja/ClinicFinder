@@ -2,6 +2,8 @@
 import { NextResponse } from "next/server";
 import { runTriageCompletion, ChatMessage } from "@/lib/ai";
 
+export const runtime = "nodejs";
+
 const SYSTEM_PROMPT = `You are the Bibi Foundation intake assistant. Your job is to gather symptoms,
 background, urgency signals, and any barriers (transportation, insurance, languages) so you can recommend
 the most appropriate type of clinic or specialist. Provide empathetic, plain-language guidance. Avoid

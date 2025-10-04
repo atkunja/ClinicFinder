@@ -50,7 +50,7 @@ const services = [
   },
   {
     title: "AI Symptom Triage",
-    summary: "Admins can capture key details with our Gemini-powered intake assistant to recommend the right type of clinic before making calls.",
+    summary: "Admins can capture key details with our ChatGPT-powered intake assistant to recommend the right type of clinic before making calls.",
   },
 ];
 
@@ -148,7 +148,7 @@ export default function HomePage() {
 
           <div className="rounded-2xl border border-white/15 bg-white/10 px-5 py-4 text-sm text-white shadow-inner shadow-white/5 sm:flex sm:items-center sm:justify-between">
             <div className="max-w-lg text-white/80">
-              <strong className="font-semibold text-white">New:</strong> Gemini-powered symptom triage helps volunteers capture the right info before booking.
+              <strong className="font-semibold text-white">New:</strong> ChatGPT-powered symptom triage helps volunteers capture the right info before booking.
             </div>
             <Link
               href="/admin/triage"
