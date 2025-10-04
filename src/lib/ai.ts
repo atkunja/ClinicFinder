@@ -1,21 +1,17 @@
 // src/lib/ai.ts
 
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import OpenAI from "openai";
 
 export type ChatMessage = {
   role: "user" | "assistant";
   content: string;
 };
 
-function toGeminiRole(role: ChatMessage["role" ]): "user" | "model" {
-  return role === "assistant" ? "model" : "user";
-}
-
-const clientCache = new Map<string, GoogleGenerativeAI>();
+const clientCache = new Map<string, OpenAI>();
 
 function getClient(apiKey: string) {
   if (!clientCache.has(apiKey)) {
-    clientCache.set(apiKey, new GoogleGenerativeAI(apiKey));
+    clientCache.set(apiKey, new OpenAI({ apiKey }));
   }
   return clientCache.get(apiKey)!;
 }
@@ -27,21 +23,22 @@ export async function runTriageCompletion({
   systemPrompt: string;
   history: ChatMessage[];
 }): Promise<string> {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) throw new Error("GEMINI_API_KEY is not set");
+  const apiKey = process.env.OPEN_AI_KEY;
+  if (!apiKey) throw new Error("OPEN_AI_KEY is not set");
 
   const client = getClient(apiKey);
-  const model = client.getGenerativeModel({ model: "gemini-pro" });
+  const model = process.env.OPEN_AI_MODEL ?? "gpt-4o-mini";
 
-  const res = await model.generateContent({
-    systemInstruction: { role: "system", parts: [{ text: systemPrompt }] },
-    contents: history.map((message) => ({
-      role: toGeminiRole(message.role),
-      parts: [{ text: message.content }],
-    })),
+  const res = await client.chat.completions.create({
+    model,
+    messages: [
+      { role: "system", content: systemPrompt },
+      ...history.map((message) => ({ role: message.role, content: message.content })),
+    ],
+    temperature: 0.2,
   });
 
-  const text = res?.response?.text?.().trim?.();
-  if (!text) throw new Error("Gemini returned an empty response");
+  const text = res.choices[0]?.message?.content?.trim();
+  if (!text) throw new Error("OpenAI returned an empty response");
   return text;
 }

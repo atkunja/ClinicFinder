@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import OpenAI from "openai";
 
 export const runtime = "nodejs";
 
@@ -112,30 +112,25 @@ export async function GET(req: Request) {
     const html = await r.text();
 
     let out: IngestResult | null = null;
-    const key = process.env.GEMINI_API_KEY;
+    const key = process.env.OPEN_AI_KEY;
+    const model = process.env.OPEN_AI_MODEL ?? "gpt-4o-mini";
 
     if (key) {
       try {
-        const genAI = new GoogleGenerativeAI(key);
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-        const prompt = `
-Return ONLY compact JSON for a public clinic's details from the HTML below.
-
-Keys:
-name,address,phone,website,summary,
-services[],languages[],eligibility[],
-hours{Mon,Tue,Wed,Thu,Fri,Sat,Sun}
-
-- Prefer short, human-friendly values.
-- If unknown: empty string or [].
-- Website must be the original URL if not found.
-
-HTML_START
-${html.slice(0, 200000)}
-HTML_END
-`.trim();
-        const resp = await model.generateContent([{ text: prompt }]);
-        const json = stripCodeFence(resp.response.text());
+        const openai = new OpenAI({ apiKey: key });
+        const instructions = `Return ONLY compact JSON for a public clinic's details. Keys: name,address,phone,website,summary, services[],languages[],eligibility[], hours{Mon,Tue,Wed,Thu,Fri,Sat,Sun}. Prefer short, human-friendly values. If unknown: empty string or []. Website must be the original URL if not found.`;
+        const resp = await openai.chat.completions.create({
+          model,
+          temperature: 0.1,
+          messages: [
+            { role: "system", content: instructions },
+            {
+              role: "user",
+              content: `HTML_START\n${html.slice(0, 200000)}\nHTML_END`,
+            },
+          ],
+        });
+        const json = stripCodeFence(resp.choices[0]?.message?.content ?? "");
         out = JSON.parse(json) as IngestResult;
         if (!out.website) out.website = siteUrl;
       } catch {
