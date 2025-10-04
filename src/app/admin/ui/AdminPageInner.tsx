@@ -258,6 +258,20 @@ export default function AdminPageInner() {
       <h1 className="text-2xl font-bold mt-3 mb-4">Admin Dashboard</h1>
       <div className="mb-4 text-sm opacity-80">Total clinics: {clinics.length} · Verified: {verifiedCount}</div>
 
+      <div className="mb-6 space-y-2 rounded-xl border border-emerald-200/60 bg-emerald-50/70 p-4 text-emerald-900">
+        <div className="text-xs uppercase tracking-[0.25em] text-emerald-700">New beta</div>
+        <h2 className="text-lg font-semibold">AI symptom triage assistant</h2>
+        <p className="text-sm text-emerald-800/80">
+          Capture presenting concerns, urgency flags, and barriers before scheduling. Powered by Google Gemini—review responses before sharing with patients.
+        </p>
+        <Link
+          href="/admin/triage"
+          className="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-emerald-700"
+        >
+          Launch assistant →
+        </Link>
+      </div>
+
       {/* FORM */}
       <form onSubmit={saveClinic} className="rounded-lg border p-4 space-y-3 bg-white text-black">
         <h2 className="font-semibold">Add / Edit Clinic</h2>
