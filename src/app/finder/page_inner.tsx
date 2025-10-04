@@ -171,7 +171,7 @@ export default function FinderPage() {
 
   return (
     <RequireAuth>
-      <section className="relative min-h-screen px-4 pb-24 pt-24 text-white">
+      <section className="relative min-h-screen px-4 pb-20 pt-20 text-white sm:pb-24 sm:pt-24">
         <div className="mx-auto flex max-w-6xl flex-col gap-10">
           <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div className="max-w-2xl space-y-3">
@@ -185,7 +185,7 @@ export default function FinderPage() {
             </div>
           </header>
 
-          <div className="app-surface relative overflow-hidden p-6 text-slate-900 shadow-xl shadow-slate-900/10">
+          <div className="app-surface relative overflow-hidden p-5 text-slate-900 shadow-xl shadow-slate-900/10 sm:p-6">
             <div className="absolute -top-24 right-0 h-40 w-40 rounded-full bg-gradient-to-br from-emerald-400/20 to-transparent blur-3xl" aria-hidden />
             <div className="absolute -bottom-24 left-8 h-40 w-40 rounded-full bg-gradient-to-br from-cyan-400/20 to-transparent blur-3xl" aria-hidden />
             <div className="relative flex flex-col gap-5 lg:flex-row lg:items-start">

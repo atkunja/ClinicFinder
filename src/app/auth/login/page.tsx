@@ -75,8 +75,8 @@ function LoginInner() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center px-4 pb-24 pt-24 text-white">
-      <div className="glass-panel w-full max-w-md p-8 text-slate-900">
+    <main className="flex min-h-screen items-center justify-center px-4 pb-20 pt-20 text-white sm:pb-24 sm:pt-24">
+      <div className="glass-panel w-full max-w-md p-6 text-slate-900 sm:p-8">
         <h1 className="text-center text-2xl font-semibold text-slate-900">
           {mode === "login" ? "Log in" : "Create your account"}
         </h1>

@@ -56,7 +56,7 @@ const reminders = [
 
 export default function PreparePage() {
   return (
-    <main className="relative min-h-screen px-4 pb-24 pt-24 text-white">
+    <main className="relative min-h-screen px-4 pb-20 pt-20 text-white sm:pb-24 sm:pt-24">
       <section className="mx-auto flex max-w-5xl flex-col gap-8 text-center">
         <div className="inline-flex items-center justify-center gap-2 rounded-full border border-white/30 bg-white/10 px-4 py-2 text-xs uppercase tracking-[0.3em] text-white/70">
           Visit preparation

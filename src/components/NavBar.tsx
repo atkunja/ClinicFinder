@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { useAuth } from "@/components/AuthProvider";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 const ALLOW = (process.env.NEXT_PUBLIC_ADMIN_ALLOWLIST || "")
   .split(",")
@@ -22,6 +22,7 @@ export default function NavBar() {
   const router = useRouter();
   const { user, loading } = useAuth();
   const [busy, setBusy] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const links = [
     { href: "/", label: "Home" },
@@ -33,6 +34,13 @@ export default function NavBar() {
     pathname === href || (href !== "/" && pathname?.startsWith(href));
 
   const showAdmin = useMemo(() => isAllowlisted(user?.email), [user]);
+  const navItems = showAdmin
+    ? [...links, { href: "/admin", label: "Admin" }]
+    : links;
+
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [pathname]);
 
   async function handleSignOut() {
     try {
@@ -68,55 +76,119 @@ export default function NavBar() {
           </div>
         </Link>
 
-        <nav className="flex items-center gap-2 text-sm font-medium text-white/80">
-          {links.map((link) => {
+        <div className="flex items-center gap-2">
+          <nav className="hidden items-center gap-2 text-sm font-medium text-white/80 md:flex">
+            {navItems.map((link) => {
+              const isActive = active(link.href);
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={`relative overflow-hidden rounded-full px-4 py-2 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300 ${
+                    isActive
+                      ? "bg-white/20 text-white shadow-inner shadow-white/10"
+                      : "hover:bg-white/10 hover:text-white"
+                  }`}
+                >
+                  <span className="relative z-10">{link.label}</span>
+                </Link>
+              );
+            })}
+
+            {!loading && (
+              <div className="ml-2">
+                {user ? (
+                  <button
+                    onClick={handleSignOut}
+                    disabled={busy}
+                    className="group relative overflow-hidden rounded-full border border-white/30 px-4 py-1.5 text-sm text-white transition hover:border-white/50 hover:bg-white/10 disabled:opacity-60"
+                  >
+                    <span className="relative z-10">{busy ? "Signing out…" : "Sign out"}</span>
+                    <span
+                      aria-hidden
+                      className="absolute inset-0 -z-10 bg-gradient-to-r from-emerald-400/30 to-cyan-400/30 opacity-0 transition group-hover:opacity-100"
+                    />
+                  </button>
+                ) : (
+                  <Link
+                    href="/login"
+                    className="rounded-full bg-gradient-to-r from-emerald-400/80 to-cyan-400/80 px-4 py-1.5 text-sm font-semibold text-slate-900 shadow-lg shadow-cyan-500/20 transition hover:from-emerald-300 hover:to-cyan-300"
+                  >
+                    Log in
+                  </Link>
+                )}
+              </div>
+            )}
+          </nav>
+
+          <button
+            type="button"
+            className="inline-flex items-center justify-center rounded-xl border border-white/25 bg-white/10 p-2 text-white transition hover:border-white/40 hover:bg-white/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300 md:hidden"
+            onClick={() => setMenuOpen((v) => !v)}
+            aria-expanded={menuOpen}
+            aria-controls="mobile-nav"
+          >
+            <span className="sr-only">Toggle navigation</span>
+            <span className="flex h-4 w-5 flex-col justify-between">
+              <span
+                className={`h-0.5 w-full rounded bg-current transition duration-200 ${
+                  menuOpen ? "translate-y-1.5 rotate-45" : ""
+                }`}
+              />
+              <span
+                className={`h-0.5 w-full rounded bg-current transition duration-200 ${
+                  menuOpen ? "opacity-0" : ""
+                }`}
+              />
+              <span
+                className={`h-0.5 w-full rounded bg-current transition duration-200 ${
+                  menuOpen ? "-translate-y-1.5 -rotate-45" : ""
+                }`}
+              />
+            </span>
+          </button>
+        </div>
+      </div>
+
+      <div
+        id="mobile-nav"
+        aria-hidden={!menuOpen}
+        className={`md:hidden overflow-hidden border-b border-white/10 bg-slate-950/70 backdrop-blur transition-all duration-200 ${
+          menuOpen ? "max-h-96 opacity-100" : "pointer-events-none max-h-0 opacity-0"
+        }`}
+      >
+        <nav className="space-y-2 px-4 pb-4 pt-3 text-sm text-white/80">
+          {navItems.map((link) => {
             const isActive = active(link.href);
             return (
               <Link
                 key={link.href}
                 href={link.href}
-                className={`relative overflow-hidden rounded-full px-4 py-2 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300 ${
+                className={`block rounded-2xl border px-4 py-2 transition ${
                   isActive
-                    ? "bg-white/20 text-white shadow-inner shadow-white/10"
-                    : "hover:bg-white/10 hover:text-white"
+                    ? "border-white/40 bg-white/20 text-white"
+                    : "border-white/10 bg-white/5 hover:border-white/30 hover:text-white"
                 }`}
               >
-                <span className="relative z-10">{link.label}</span>
+                {link.label}
               </Link>
             );
           })}
 
-          {showAdmin && (
-            <Link
-              href="/admin"
-              className={`relative overflow-hidden rounded-full px-4 py-2 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300 ${
-                active("/admin")
-                  ? "bg-white/20 text-white shadow-inner shadow-white/10"
-                  : "hover:bg-white/10 hover:text-white"
-              }`}
-            >
-              <span className="relative z-10">Admin</span>
-            </Link>
-          )}
-
           {!loading && (
-            <div className="ml-2">
+            <div className="pt-2">
               {user ? (
                 <button
                   onClick={handleSignOut}
                   disabled={busy}
-                  className="group relative overflow-hidden rounded-full border border-white/30 px-4 py-1.5 text-sm text-white transition hover:border-white/50 hover:bg-white/10 disabled:opacity-60"
+                  className="w-full rounded-2xl border border-white/20 bg-white/10 px-4 py-2 text-left text-sm text-white transition hover:border-white/40 hover:bg-white/20 disabled:opacity-60"
                 >
-                  <span className="relative z-10">{busy ? "Signing out…" : "Sign out"}</span>
-                  <span
-                    aria-hidden
-                    className="absolute inset-0 -z-10 bg-gradient-to-r from-emerald-400/30 to-cyan-400/30 opacity-0 transition group-hover:opacity-100"
-                  />
+                  {busy ? "Signing out…" : "Sign out"}
                 </button>
               ) : (
                 <Link
                   href="/login"
-                  className="rounded-full bg-gradient-to-r from-emerald-400/80 to-cyan-400/80 px-4 py-1.5 text-sm font-semibold text-slate-900 shadow-lg shadow-cyan-500/20 transition hover:from-emerald-300 hover:to-cyan-300"
+                  className="block rounded-2xl border border-white/20 bg-gradient-to-r from-emerald-400/80 to-cyan-400/80 px-4 py-2 text-center text-sm font-semibold text-slate-900 shadow-lg shadow-cyan-500/20"
                 >
                   Log in
                 </Link>

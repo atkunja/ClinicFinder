@@ -94,7 +94,7 @@ export const metadata = {
 
 export default function HomePage() {
   return (
-    <main className="relative isolate overflow-hidden pb-20">
+    <main className="relative isolate overflow-hidden pb-16 sm:pb-20">
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 z-[-1]"
@@ -105,7 +105,7 @@ export default function HomePage() {
       />
 
       {/* Hero */}
-      <section className="mx-auto flex max-w-6xl flex-col gap-12 px-4 pt-24 text-white lg:flex-row lg:items-center">
+      <section className="mx-auto flex max-w-6xl flex-col gap-12 px-4 pt-20 text-white sm:pt-24 lg:flex-row lg:items-center">
         <div className="flex-1 space-y-8">
           <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-1 text-xs uppercase tracking-[0.35em] text-white/70">
             Free & low-cost care, verified weekly
@@ -144,7 +144,7 @@ export default function HomePage() {
         </div>
 
         <div className="flex-1">
-          <div className="glass-panel relative mx-auto max-w-md p-8 text-slate-900">
+          <div className="glass-panel relative mx-auto max-w-md p-6 text-slate-900 sm:p-8">
             <div className="absolute -top-16 right-6 hidden h-32 w-32 rounded-full bg-gradient-to-br from-emerald-300/60 to-cyan-300/20 blur-3xl sm:block" />
             <h2 className="text-sm font-semibold uppercase tracking-[0.3em] text-slate-600">
               Concierge support
@@ -177,8 +177,8 @@ export default function HomePage() {
       </section>
 
       {/* Story highlight */}
-      <section className="mx-auto mt-24 max-w-5xl px-4">
-        <div className="relative overflow-hidden rounded-[32px] border border-white/15 bg-white/10 p-10 text-white shadow-2xl shadow-cyan-500/20">
+      <section className="mx-auto mt-16 max-w-5xl px-4 sm:mt-24">
+        <div className="relative overflow-hidden rounded-[32px] border border-white/15 bg-white/10 p-6 text-white shadow-2xl shadow-cyan-500/20 sm:p-10">
           <div className="absolute -right-10 -top-16 h-40 w-40 rounded-full bg-gradient-to-br from-white/50 to-transparent blur-3xl" />
           <div className="absolute -bottom-16 -left-10 hidden h-48 w-48 rounded-full bg-gradient-to-br from-emerald-500/40 to-transparent blur-3xl md:block" />
           <div className="relative space-y-6">
@@ -199,8 +199,8 @@ export default function HomePage() {
       </section>
 
       {/* Care pathway */}
-      <section className="mx-auto mt-24 max-w-6xl px-4">
-        <div className="app-surface relative overflow-hidden p-10">
+      <section className="mx-auto mt-16 max-w-6xl px-4 sm:mt-24">
+        <div className="app-surface relative overflow-hidden p-6 sm:p-10">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(59,130,246,0.12),_transparent_55%)]" aria-hidden />
           <div className="relative grid gap-10 md:grid-cols-[320px_1fr]">
             <div className="space-y-5">
@@ -233,7 +233,7 @@ export default function HomePage() {
       </section>
 
       {/* Services */}
-      <section className="mx-auto mt-24 max-w-6xl px-4">
+      <section className="mx-auto mt-16 max-w-6xl px-4 sm:mt-24">
         <div className="mb-10 flex flex-col gap-4 text-white sm:flex-row sm:items-end sm:justify-between">
           <div>
             <h2 className="text-3xl font-semibold">Care programs we cover</h2>
@@ -251,7 +251,7 @@ export default function HomePage() {
         </div>
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {services.map((service) => (
-            <div key={service.title} className="group relative overflow-hidden rounded-3xl border border-white/20 bg-white/10 p-8 text-white shadow-lg shadow-cyan-500/10 transition hover:border-white/40 hover:shadow-cyan-500/40">
+            <div key={service.title} className="group relative overflow-hidden rounded-3xl border border-white/20 bg-white/10 p-6 text-white shadow-lg shadow-cyan-500/10 transition hover:border-white/40 hover:shadow-cyan-500/40 sm:p-8">
               <div className="absolute -right-12 -top-12 h-32 w-32 rounded-full bg-white/10 blur-3xl transition group-hover:bg-white/30" />
               <div className="relative space-y-4">
                 <h3 className="text-xl font-semibold">{service.title}</h3>
@@ -263,9 +263,9 @@ export default function HomePage() {
       </section>
 
       {/* Testimonials */}
-      <section className="mx-auto mt-24 max-w-6xl px-4">
+      <section className="mx-auto mt-16 max-w-6xl px-4 sm:mt-24">
         <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
-          <div className="app-surface relative overflow-hidden p-8">
+          <div className="app-surface relative overflow-hidden p-6 sm:p-8">
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(13,148,136,0.15),_transparent_60%)]" aria-hidden />
             <div className="relative space-y-4">
               <h2 className="text-3xl font-semibold text-slate-900">Built with and for community</h2>
@@ -285,7 +285,7 @@ export default function HomePage() {
             </div>
           </div>
 
-          <aside className="glass-panel relative flex flex-col justify-between gap-6 p-8 text-slate-900">
+          <aside className="glass-panel relative flex flex-col justify-between gap-6 p-6 text-slate-900 sm:p-8">
             <div>
               <h3 className="text-lg font-semibold text-slate-900">We never sell your data</h3>
               <p className="mt-3 text-sm text-slate-600">
@@ -319,7 +319,7 @@ export default function HomePage() {
 
       {/* FAQ */}
       <section className="mx-auto mt-24 max-w-6xl px-4">
-        <div className="app-surface p-10">
+        <div className="app-surface p-6 sm:p-10">
           <div className="grid gap-10 lg:grid-cols-[320px_1fr]">
             <div className="space-y-4">
               <h2 className="text-3xl font-semibold text-slate-900">Answers before you travel</h2>
@@ -340,8 +340,8 @@ export default function HomePage() {
       </section>
 
       {/* CTA */}
-      <section className="mx-auto mt-24 max-w-5xl px-4">
-        <div className="relative overflow-hidden rounded-[32px] border border-white/15 bg-gradient-to-br from-emerald-400/70 via-cyan-400/60 to-sky-400/60 p-10 text-slate-900 shadow-2xl shadow-cyan-500/30">
+      <section className="mx-auto mt-16 max-w-5xl px-4 sm:mt-24">
+        <div className="relative overflow-hidden rounded-[32px] border border-white/15 bg-gradient-to-br from-emerald-400/70 via-cyan-400/60 to-sky-400/60 p-6 text-slate-900 shadow-2xl shadow-cyan-500/30 sm:p-10">
           <div className="relative space-y-6">
             <h2 className="text-3xl font-semibold">Ready when you are</h2>
             <p className="text-base text-slate-800">

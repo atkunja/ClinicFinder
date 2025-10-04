@@ -27,8 +27,8 @@ export default function Results({
   onLeave?: () => void;
 }) {
   return (
-    <section className="mx-auto mt-10 max-w-6xl px-0 pb-10">
-      <div className="app-surface overflow-hidden p-6 text-slate-900 shadow-xl shadow-slate-900/10">
+    <section className="mx-auto mt-8 max-w-6xl px-0 pb-10 sm:mt-10">
+      <div className="app-surface overflow-hidden p-4 text-slate-900 shadow-xl shadow-slate-900/10 sm:p-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <h2 className="text-xl font-semibold text-slate-900">Nearest clinics</h2>
           <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Sorted by distance</p>
@@ -48,7 +48,7 @@ export default function Results({
             {clinics.map((clinic) => (
               <div
                 key={clinic.id}
-                className="group rounded-2xl border border-slate-200/70 bg-white p-5 shadow-sm transition hover:border-emerald-200 hover:shadow-lg hover:shadow-emerald-200/40"
+                className="group rounded-2xl border border-slate-200/70 bg-white p-4 shadow-sm transition hover:border-emerald-200 hover:shadow-lg hover:shadow-emerald-200/40 sm:p-5"
                 onMouseEnter={() => onHover?.(clinic.id)}
                 onMouseLeave={() => onLeave?.()}
               >

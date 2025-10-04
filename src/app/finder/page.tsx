@@ -11,7 +11,7 @@ export default function FinderPage() {
     <Suspense
       fallback={
         <main className="grid min-h-[70vh] place-items-center px-4 pt-24 text-white">
-          <div className="glass-panel w-full max-w-md p-8 text-slate-900">
+          <div className="glass-panel w-full max-w-md p-6 text-slate-900 sm:p-8">
             <div className="text-lg font-semibold">Loading finder…</div>
             <p className="mt-2 text-sm text-slate-600">
               One moment while we prepare the clinic map and search tools for you.
