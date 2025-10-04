@@ -27,80 +27,82 @@ export default function Results({
   onLeave?: () => void;
 }) {
   return (
-    <section className="max-w-5xl mx-auto px-4 pb-10">
-      <div className="bg-white text-black rounded-lg border p-4">
-        <h2 className="text-lg font-semibold mb-3">Nearest clinics</h2>
+    <section className="mx-auto mt-10 max-w-6xl px-0 pb-10">
+      <div className="app-surface overflow-hidden p-6 text-slate-900 shadow-xl shadow-slate-900/10">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <h2 className="text-xl font-semibold text-slate-900">Nearest clinics</h2>
+          <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Sorted by distance</p>
+        </div>
 
-        {clinics.length === 0 && (
-          <div className="text-gray-700 text-sm">
-            No clinics found.
-            <ul className="mt-2 list-disc ml-5">
-              <li>Uncheck <b>Show verified only</b> if it’s on.</li>
-              <li>Click <b>Use my location</b> or increase the <b>Radius</b>.</li>
-              <li>Make sure docs are in <code>clinics</code> (lowercase) and <code>coords</code> are numbers.</li>
+        {clinics.length === 0 ? (
+          <div className="mt-6 rounded-2xl border border-slate-200/70 bg-slate-50/80 px-5 py-6 text-sm text-slate-600">
+            No clinics matched your filters yet.
+            <ul className="mt-3 list-disc space-y-1 pl-5 text-xs text-slate-500">
+              <li>Disable <strong>Verified only</strong> to view every option.</li>
+              <li>Expand the search radius or enter a nearby landmark.</li>
+              <li>Need hands-on help? Call <span className="font-semibold">(313) 555-0110</span> and we will guide you.</li>
             </ul>
           </div>
-        )}
-
-        <div className="space-y-4">
-          {clinics.map((clinic) => (
-            <div
-              key={clinic.id}
-              className="bg-white text-black border rounded-md p-4"
-              onMouseEnter={() => onHover?.(clinic.id)}
-              onMouseLeave={() => onLeave?.()}
-            >
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <div className="text-base font-semibold">
-                    {clinic.name}
-                    {clinic.miles !== undefined && isFinite(clinic.miles) && (
-                      <span className="ml-2 text-xs text-gray-600">
-                        {clinic.miles.toFixed(1)} mi
-                      </span>
-                    )}
-                    {clinic.verified && (
-                      <span className="ml-2 text-xs px-2 py-0.5 rounded bg-emerald-100 text-emerald-800">
-                        Verified
-                      </span>
+        ) : (
+          <div className="mt-6 space-y-4">
+            {clinics.map((clinic) => (
+              <div
+                key={clinic.id}
+                className="group rounded-2xl border border-slate-200/70 bg-white p-5 shadow-sm transition hover:border-emerald-200 hover:shadow-lg hover:shadow-emerald-200/40"
+                onMouseEnter={() => onHover?.(clinic.id)}
+                onMouseLeave={() => onLeave?.()}
+              >
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="space-y-1">
+                    <div className="flex flex-wrap items-center gap-2 text-base font-semibold text-slate-900">
+                      <span>{clinic.name}</span>
+                      {clinic.miles !== undefined && isFinite(clinic.miles) && (
+                        <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">
+                          {clinic.miles.toFixed(clinic.miles < 10 ? 1 : 0)} mi
+                        </span>
+                      )}
+                      {clinic.verified && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700">
+                          <span aria-hidden>✔</span>
+                          Verified
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-xs text-slate-500">{clinic.address}</div>
+                    {!!clinic.services?.length && (
+                      <div className="text-xs text-slate-600">
+                        <span className="font-semibold text-slate-700">Services:</span> {clinic.services?.join(", ")}
+                      </div>
                     )}
                   </div>
-                  <div className="text-xs text-gray-700 mt-1">{clinic.address}</div>
-                  {!!clinic.services?.length && (
-                    <div className="mt-1 text-xs">
-                      <span className="font-medium">Services:</span>{" "}
-                      {clinic.services?.join(", ")}
-                    </div>
-                  )}
-                </div>
 
-                <div className="flex gap-2 shrink-0">
-                  <Link
-                    href={`/finder/${clinic.slug ?? clinic.id}`}
-                    className="text-xs px-2 py-1 border rounded hover:bg-gray-50"
-                  >
-                    View details →
-                  </Link>
-                  {clinic.url && (
-                    <a
-                      href={clinic.url}
-                      target="_blank"
-                      className="text-xs px-2 py-1 border rounded hover:bg-gray-50"
+                  <div className="flex items-center gap-2">
+                    <Link
+                      href={`/finder/${clinic.slug ?? clinic.id}`}
+                      className="rounded-full border border-slate-200/70 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-emerald-200 hover:text-emerald-700"
                     >
-                      Website
-                    </a>
-                  )}
+                      View details →
+                    </Link>
+                    {clinic.url && (
+                      <a
+                        href={clinic.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="rounded-full border border-slate-200/70 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-slate-300 hover:text-slate-900"
+                      >
+                        Website
+                      </a>
+                    )}
+                  </div>
                 </div>
-              </div>
 
-              {clinic.summary && (
-                <p className="text-xs text-gray-800 mt-2 line-clamp-2">
-                  {clinic.summary}
-                </p>
-              )}
-            </div>
-          ))}
-        </div>
+                {clinic.summary && (
+                  <p className="mt-3 text-sm text-slate-600">{clinic.summary}</p>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );

@@ -94,65 +94,74 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
-      <form onSubmit={submit} className="bg-white p-8 rounded shadow max-w-sm w-full">
-        <h1 className="text-2xl font-bold text-emerald-700 mb-4 text-center">
-          {mode === "login" ? "Log in" : "Sign up"}
+    <main className="flex min-h-screen items-center justify-center px-4 pb-24 pt-24 text-white">
+      <div className="glass-panel w-full max-w-md p-8 text-slate-900">
+        <h1 className="text-center text-2xl font-semibold text-slate-900">
+          {mode === "login" ? "Log in" : "Create your account"}
         </h1>
+        <p className="mt-2 text-center text-sm text-slate-600">
+          Volunteer admins use this portal to keep clinics accurate and compassionate.
+        </p>
 
-        <input
-          type="email"
-          className="w-full border p-2 rounded mb-3 text-black"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          autoComplete="email"
-          required
-        />
-        <input
-          type="password"
-          className="w-full border p-2 rounded mb-4 text-black"
-          placeholder="Password"
-          value={pass}
-          onChange={(e) => setPass(e.target.value)}
-          autoComplete={mode === "login" ? "current-password" : "new-password"}
-          required
-        />
+        <form onSubmit={submit} className="mt-6 space-y-4">
+          <input
+            type="email"
+            className="w-full rounded-2xl border border-slate-200/80 bg-white px-4 py-2.5 text-slate-900 shadow-inner shadow-white/40 outline-none focus:ring-2 focus:ring-emerald-400"
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            autoComplete="email"
+            required
+          />
+          <input
+            type="password"
+            className="w-full rounded-2xl border border-slate-200/80 bg-white px-4 py-2.5 text-slate-900 shadow-inner shadow-white/40 outline-none focus:ring-2 focus:ring-emerald-400"
+            placeholder="Password"
+            value={pass}
+            onChange={(e) => setPass(e.target.value)}
+            autoComplete={mode === "login" ? "current-password" : "new-password"}
+            required
+          />
 
-        <button className="w-full bg-emerald-600 text-white p-2 rounded font-bold hover:bg-emerald-700">
-          {mode === "login" ? "Log in" : "Create account"}
-        </button>
+          <button className="w-full rounded-full bg-gradient-to-r from-emerald-300 to-cyan-300 px-4 py-2.5 text-sm font-semibold text-slate-900 shadow-lg shadow-cyan-500/30 transition hover:from-emerald-200 hover:to-cyan-200">
+            {mode === "login" ? "Log in" : "Create account"}
+          </button>
+        </form>
 
-        <div className="my-4 h-px bg-gray-200" />
+        <div className="relative my-6 text-center text-xs text-slate-400">
+          <span className="bg-white px-3">or</span>
+          <div className="absolute left-0 right-0 top-1/2 -z-10 h-px -translate-y-1/2 bg-slate-200" />
+        </div>
 
-        <button
-          type="button"
-          onClick={signInWithGoogle}
-          className="w-full border border-gray-300 text-black p-2 rounded font-medium hover:bg-gray-50"
-        >
-          Continue with Google
-        </button>
+        <div className="space-y-3">
+          <button
+            type="button"
+            onClick={signInWithGoogle}
+            className="w-full rounded-full border border-slate-200/80 bg-white px-4 py-2.5 text-sm font-medium text-slate-800 transition hover:border-emerald-200 hover:text-slate-900"
+          >
+            Continue with Google
+          </button>
+          <button
+            type="button"
+            onClick={signInWithApple}
+            className="w-full rounded-full border border-slate-200/80 bg-white px-4 py-2.5 text-sm font-medium text-slate-800 transition hover:border-emerald-200 hover:text-slate-900"
+          >
+            Continue with Apple
+          </button>
+        </div>
 
-        <button
-          type="button"
-          onClick={signInWithApple}
-          className="w-full border border-gray-300 text-black p-2 rounded font-medium mt-2 hover:bg-gray-50"
-        >
-          Continue with Apple
-        </button>
+        {msg && <p className="mt-4 text-center text-sm text-rose-600">{msg}</p>}
 
-        {msg && <p className="text-center text-sm text-black mt-3">{msg}</p>}
-
-        <div className="text-center mt-4">
+        <div className="mt-6 text-center text-sm">
           <button
             type="button"
             onClick={() => setMode(mode === "login" ? "signup" : "login")}
-            className="text-emerald-700 font-semibold hover:underline"
+            className="font-semibold text-emerald-700 underline-offset-4 transition hover:text-emerald-600 hover:underline"
           >
             {mode === "login" ? "Need an account? Sign up" : "Have an account? Log in"}
           </button>
         </div>
-      </form>
-    </div>
+      </div>
+    </main>
   );
 }

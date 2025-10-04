@@ -1,29 +1,104 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #071423;
+  --foreground: #0f172a;
+  --surface: #ffffff;
+  --surface-muted: rgba(255, 255, 255, 0.65);
+  --accent: #0d9488;
+  --accent-strong: #0f766e;
+  --accent-soft: rgba(13, 148, 136, 0.18);
+  --text: #0f172a;
+  --text-muted: #475569;
+  --shadow-soft: 0px 20px 60px rgba(15, 23, 42, 0.12);
+  --shadow-ring: inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  --grid-color: rgba(226, 232, 240, 0.08);
+  --font-sans-fallback: "Plus Jakarta Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono-fallback: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  min-height: 100vh;
+  margin: 0;
+  background: radial-gradient(circle at 10% 20%, rgba(14, 165, 233, 0.15) 0%, transparent 45%),
+    radial-gradient(circle at 90% 10%, rgba(16, 185, 129, 0.17) 0%, transparent 55%),
+    linear-gradient(160deg, rgba(4, 12, 24, 0.95), rgba(12, 18, 32, 1));
+  background-attachment: fixed;
+  color: var(--text);
+  font-family: var(--font-sans, var(--font-sans-fallback));
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
 }
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image: linear-gradient(90deg, var(--grid-color) 1px, transparent 1px),
+    linear-gradient(180deg, var(--grid-color) 1px, transparent 1px);
+  background-size: 120px 120px;
+  opacity: 0.65;
+  z-index: -2;
+}
+
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(circle at 20% 80%, rgba(84, 197, 240, 0.18), transparent 55%),
+    radial-gradient(circle at 80% 75%, rgba(14, 116, 144, 0.25), transparent 65%);
+  z-index: -1;
+}
+
+.app-shell {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  color: var(--text);
+}
+
+.app-surface {
+  background: var(--surface);
+  box-shadow: var(--shadow-soft);
+  border-radius: 24px;
+  border: 1px solid rgba(148, 163, 184, 0.08);
+  backdrop-filter: blur(12px);
+}
+
+.glass-panel {
+  background: var(--surface-muted);
+  border-radius: 24px;
+  box-shadow: var(--shadow-soft);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(20px);
+}
+
+.bg-grid-light {
+  position: relative;
+  background-color: rgba(255, 255, 255, 0.92);
+}
+
+.bg-grid-light::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(90deg, rgba(225, 239, 254, 0.6) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(225, 239, 254, 0.6) 1px, transparent 1px);
+  background-size: 56px 56px;
+  opacity: 0.5;
+  pointer-events: none;
+}
+
 .leaflet-control-attribution {
   display: none !important;
 }
@@ -34,4 +109,3 @@ body {
   width: 100%;
   z-index: 0;
 }
-

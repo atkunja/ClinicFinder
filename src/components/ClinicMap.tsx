@@ -198,7 +198,7 @@ export default function ClinicMap({
   };
 
   return (
-    <div className="relative rounded-2xl overflow-hidden border">
+    <div className="app-surface relative overflow-hidden shadow-xl shadow-slate-900/10">
       <MapContainer center={center} zoom={10} style={{ height: 420, width: '100%' }} scrollWheelZoom>
         <TileLayer
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"

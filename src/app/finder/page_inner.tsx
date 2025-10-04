@@ -171,24 +171,42 @@ export default function FinderPage() {
 
   return (
     <RequireAuth>
-      <div className="min-h-screen bg-[rgb(247,249,251)] text-slate-900">
-        <div className="max-w-6xl mx-auto px-4 py-5">
-          {/* Header / Controls */}
-          <div className="rounded-2xl bg-white border shadow-sm p-4 md:p-5 mb-5">
-            <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+      <section className="relative min-h-screen px-4 pb-24 pt-24 text-white">
+        <div className="mx-auto flex max-w-6xl flex-col gap-10">
+          <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div className="max-w-2xl space-y-3">
+              <h1 className="text-3xl font-semibold">Clinic Finder</h1>
+              <p className="text-sm text-white/75">
+                Enter an address or share your location to surface free and low-cost clinics. Every result includes our latest notes on eligibility, languages, and transportation support.
+              </p>
+            </div>
+            <div className="inline-flex items-center gap-3 rounded-full border border-white/30 bg-white/10 px-4 py-2 text-xs uppercase tracking-[0.3em] text-white/70">
+              Updated weekly by volunteers
+            </div>
+          </header>
+
+          <div className="app-surface relative overflow-hidden p-6 text-slate-900 shadow-xl shadow-slate-900/10">
+            <div className="absolute -top-24 right-0 h-40 w-40 rounded-full bg-gradient-to-br from-emerald-400/20 to-transparent blur-3xl" aria-hidden />
+            <div className="absolute -bottom-24 left-8 h-40 w-40 rounded-full bg-gradient-to-br from-cyan-400/20 to-transparent blur-3xl" aria-hidden />
+            <div className="relative flex flex-col gap-5 lg:flex-row lg:items-start">
               {/* Address input + dropdown */}
               <div className="relative w-full lg:max-w-xl" ref={dropdownRef}>
                 <label className="sr-only">Search by address</label>
                 <input
                   value={address}
-                  onChange={(e) => { setAddress(e.target.value); setOpenDrop(true); }}
+                  onChange={(e) => {
+                    setAddress(e.target.value);
+                    setOpenDrop(true);
+                  }}
                   onFocus={() => setOpenDrop(true)}
-                  className="w-full rounded-xl border px-4 py-2.5 outline-none focus:ring-2 focus:ring-emerald-500"
-                  placeholder="Enter address or city"
+                  className="w-full rounded-2xl border border-slate-200/80 bg-white px-4 py-3 text-slate-900 shadow-inner shadow-white/40 outline-none transition focus:ring-2 focus:ring-emerald-400"
+                  placeholder="Enter address, landmark, or city"
                 />
                 {openDrop && (
-                  <div className="absolute z-20 mt-1 w-full max-h-64 overflow-auto rounded-xl border bg-white shadow-lg">
-                    {loadingDrop && <div className="px-3 py-2 text-sm text-slate-500">Searching…</div>}
+                  <div className="absolute z-20 mt-2 w-full max-h-64 overflow-auto rounded-2xl border border-slate-200/70 bg-white shadow-xl">
+                    {loadingDrop && (
+                      <div className="px-3 py-2 text-sm text-slate-500">Searching…</div>
+                    )}
                     {!loadingDrop && suggestions.length === 0 && debouncedQ.length >= 3 && (
                       <div className="px-3 py-2 text-sm text-slate-500">No matches</div>
                     )}
@@ -196,57 +214,67 @@ export default function FinderPage() {
                       <button
                         key={`${s.lat}${s.lon}${i}`}
                         onClick={() => pickSuggestion(s)}
-                        className="w-full text-left px-3 py-2 hover:bg-emerald-50"
+                        className="w-full px-4 py-2 text-left text-sm text-slate-700 transition hover:bg-emerald-50"
                       >
-                        <div className="text-sm">{s.label}</div>
+                        {s.label}
                       </button>
                     ))}
                   </div>
                 )}
+                <p className="mt-2 text-xs text-slate-500">
+                  Example: "Detroit Mercy Dental" or "48202"
+                </p>
               </div>
 
               {/* Buttons */}
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={useMyLocation}
-                  className="rounded-xl bg-emerald-600 text-white px-4 py-2 hover:bg-emerald-700"
-                >
-                  Use my location
-                </button>
-                <select
-                  value={radiusMiles}
-                  onChange={(e) => setRadiusMiles(Number(e.target.value))}
-                  className="rounded-xl border px-3 py-2"
-                  aria-label="Radius"
-                >
-                  {[10, 25, 50, 100].map((r) => (
-                    <option key={r} value={r}>{r} mi</option>
-                  ))}
-                </select>
-                <label className="inline-flex items-center gap-2 text-sm ml-1">
-                  <input
-                    type="checkbox"
-                    checked={onlyVerified}
-                    onChange={() => setOnlyVerified(v => !v)}
-                    className="h-4 w-4 accent-emerald-600"
-                  />
-                  Show verified only
-                </label>
+              <div className="flex flex-col gap-3 lg:w-2/5">
+                <div className="flex flex-wrap items-center gap-3">
+                  <button
+                    onClick={useMyLocation}
+                    className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-emerald-400 to-cyan-400 px-5 py-2.5 text-sm font-semibold text-slate-900 shadow-lg shadow-cyan-500/20 transition hover:from-emerald-300 hover:to-cyan-300"
+                  >
+                    Use my location
+                  </button>
+                  <select
+                    value={radiusMiles}
+                    onChange={(e) => setRadiusMiles(Number(e.target.value))}
+                    className="rounded-full border border-slate-200/70 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-inner shadow-white/40 focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                    aria-label="Radius"
+                  >
+                    {[10, 25, 50, 100].map((r) => (
+                      <option key={r} value={r}>
+                        {r} mi
+                      </option>
+                    ))}
+                  </select>
+                  <label className="inline-flex items-center gap-2 rounded-full border border-slate-200/70 bg-white px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.2em] text-slate-600">
+                    <input
+                      type="checkbox"
+                      checked={onlyVerified}
+                      onChange={() => setOnlyVerified((v) => !v)}
+                      className="h-3.5 w-3.5 accent-emerald-500"
+                    />
+                    Verified only
+                  </label>
+                </div>
+                <div className="rounded-2xl border border-emerald-200/60 bg-emerald-50/70 px-4 py-3 text-xs text-emerald-700">
+                  Tip: If you are searching for someone else, add their city or zip and keep the phone number ready in case the clinic needs verbal consent.
+                </div>
               </div>
             </div>
 
             {/* Service chips */}
-            <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
+            <div className="relative mt-6 flex gap-2 overflow-x-auto pb-1">
               {serviceChips.map((chip) => {
-                const active = serviceFilter.toLowerCase() === chip.toLowerCase();
+                const activeChip = serviceFilter.toLowerCase() === chip.toLowerCase();
                 return (
                   <button
                     key={chip}
-                    onClick={() => setServiceFilter(active ? "" : chip)}
-                    className={`whitespace-nowrap rounded-full border px-3 py-1.5 text-sm ${
-                      active
-                        ? "bg-emerald-600 text-white border-emerald-600"
-                        : "bg-white hover:bg-slate-50"
+                    onClick={() => setServiceFilter(activeChip ? "" : chip)}
+                    className={`whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition ${
+                      activeChip
+                        ? "bg-gradient-to-r from-emerald-400 to-cyan-400 text-slate-900 shadow-lg shadow-cyan-500/20"
+                        : "border border-slate-200/80 bg-white text-slate-600 shadow-sm hover:border-emerald-200 hover:text-slate-900"
                     }`}
                   >
                     {chip}
@@ -256,9 +284,9 @@ export default function FinderPage() {
               {serviceFilter && (
                 <button
                   onClick={() => setServiceFilter("")}
-                  className="rounded-full border px-3 py-1.5 text-sm bg-white hover:bg-slate-50"
+                  className="rounded-full border border-slate-200/80 bg-white px-4 py-2 text-sm font-medium text-slate-600 shadow-sm transition hover:border-rose-200 hover:text-rose-500"
                 >
-                  Clear
+                  Clear filter
                 </button>
               )}
             </div>
@@ -267,7 +295,7 @@ export default function FinderPage() {
           {/* Map + List only after location is set */}
           {userCoords ? (
             <>
-              <div className="rounded-2xl border shadow-sm overflow-hidden bg-white">
+              <div className="app-surface overflow-hidden shadow-xl shadow-slate-900/10">
                 <div className="p-2 sm:p-3">
                   <ClinicMap
                     clinics={visibleClinics as any}
@@ -278,7 +306,7 @@ export default function FinderPage() {
                 </div>
               </div>
 
-              <div className="mt-5">
+              <div>
                 <Results
                   clinics={visibleClinics as any}
                   onHover={(id) => setSelectedClinicId(id)}
@@ -287,12 +315,18 @@ export default function FinderPage() {
               </div>
             </>
           ) : (
-            <div className="mt-5 text-center text-slate-600">
-              <p>Please enter your address or use your location to find nearby clinics.</p>
+            <div className="app-surface px-8 py-12 text-center text-slate-600">
+              <h2 className="text-lg font-semibold text-slate-900">Let’s find the right clinic</h2>
+              <p className="mt-2 text-sm text-slate-600">
+                Enter an address above or press “Use my location” to unlock nearby options.
+              </p>
+              <p className="mt-4 text-xs uppercase tracking-[0.35em] text-slate-400">
+                No appointment requests are sent until you choose a clinic.
+              </p>
             </div>
           )}
         </div>
-      </div>
+      </section>
     </RequireAuth>
   );
 }

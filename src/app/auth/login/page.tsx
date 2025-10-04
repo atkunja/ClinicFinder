@@ -75,77 +75,84 @@ function LoginInner() {
   }
 
   return (
-    <main className="min-h-screen bg-[rgb(247,249,251)] text-slate-900">
-      <div className="mx-auto max-w-md px-4 py-16">
-        <div className="rounded-2xl border bg-white p-6 shadow-sm">
-          <h1 className="mb-4 text-center text-xl font-semibold">
-            {mode === "login" ? "Log in" : "Sign up"}
-          </h1>
+    <main className="flex min-h-screen items-center justify-center px-4 pb-24 pt-24 text-white">
+      <div className="glass-panel w-full max-w-md p-8 text-slate-900">
+        <h1 className="text-center text-2xl font-semibold text-slate-900">
+          {mode === "login" ? "Log in" : "Create your account"}
+        </h1>
+        <p className="mt-2 text-center text-sm text-slate-600">
+          Sign in to manage clinic updates, verify data, and support our community scheduling efforts.
+        </p>
 
-          {err && (
-            <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-              {err}
-            </div>
-          )}
-
-          <form onSubmit={submitEmailPassword} className="space-y-3">
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Email"
-              className="w-full rounded-xl border px-3 py-2 outline-none focus:ring-2 focus:ring-emerald-500"
-            />
-            <input
-              type="password"
-              required
-              value={pw}
-              onChange={(e) => setPw(e.target.value)}
-              placeholder="Password"
-              className="w-full rounded-xl border px-3 py-2 outline-none focus:ring-2 focus:ring-emerald-500"
-            />
-
-            <button
-              type="submit"
-              disabled={busy}
-              className="w-full rounded-xl bg-emerald-600 px-4 py-2 font-medium text-white shadow-sm hover:bg-emerald-700 disabled:opacity-60"
-            >
-              {busy ? (mode === "login" ? "Logging in…" : "Creating…") : mode === "login" ? "Log in" : "Create account"}
-            </button>
-
-            <div className="relative my-2 text-center text-xs text-slate-500">
-              <span className="bg-white px-2">or</span>
-              <div className="absolute left-0 right-0 top-1/2 -z-10 h-px -translate-y-1/2 bg-slate-200" />
-            </div>
-
-            <button
-              type="button"
-              onClick={google}
-              disabled={busy}
-              className="w-full rounded-xl border px-4 py-2 text-slate-800 hover:bg-slate-50 disabled:opacity-60"
-            >
-              Continue with Google
-            </button>
-          </form>
-
-          <div className="mt-4 text-center text-sm">
-            {mode === "login" ? (
-              <button
-                className="text-emerald-700 underline"
-                onClick={() => setMode("signup")}
-              >
-                Don’t have an account? Sign up
-              </button>
-            ) : (
-              <button
-                className="text-emerald-700 underline"
-                onClick={() => setMode("login")}
-              >
-                Have an account? Log in
-              </button>
-            )}
+        {err && (
+          <div className="mt-5 rounded-2xl border border-rose-200/70 bg-rose-50/80 px-4 py-3 text-sm text-rose-600">
+            {err}
           </div>
+        )}
+
+        <form onSubmit={submitEmailPassword} className="mt-6 space-y-4">
+          <input
+            type="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="Email"
+            className="w-full rounded-2xl border border-slate-200/80 bg-white px-4 py-2.5 text-slate-900 shadow-inner shadow-white/40 outline-none focus:ring-2 focus:ring-emerald-400"
+          />
+          <input
+            type="password"
+            required
+            value={pw}
+            onChange={(e) => setPw(e.target.value)}
+            placeholder="Password"
+            className="w-full rounded-2xl border border-slate-200/80 bg-white px-4 py-2.5 text-slate-900 shadow-inner shadow-white/40 outline-none focus:ring-2 focus:ring-emerald-400"
+          />
+
+          <button
+            type="submit"
+            disabled={busy}
+            className="w-full rounded-full bg-gradient-to-r from-emerald-300 to-cyan-300 px-4 py-2.5 text-sm font-semibold text-slate-900 shadow-lg shadow-cyan-500/30 transition hover:from-emerald-200 hover:to-cyan-200 disabled:opacity-60"
+          >
+            {busy
+              ? mode === "login"
+                ? "Logging in…"
+                : "Creating…"
+              : mode === "login"
+              ? "Log in"
+              : "Create account"}
+          </button>
+
+          <div className="relative text-center text-xs text-slate-400">
+            <span className="bg-white px-3">or</span>
+            <div className="absolute left-0 right-0 top-1/2 -z-10 h-px -translate-y-1/2 bg-slate-200" />
+          </div>
+
+          <button
+            type="button"
+            onClick={google}
+            disabled={busy}
+            className="w-full rounded-full border border-slate-200/80 bg-white px-4 py-2.5 text-sm font-medium text-slate-800 transition hover:border-emerald-200 hover:text-slate-900 disabled:opacity-60"
+          >
+            Continue with Google
+          </button>
+        </form>
+
+        <div className="mt-6 text-center text-sm">
+          {mode === "login" ? (
+            <button
+              className="font-semibold text-emerald-700 underline-offset-4 transition hover:text-emerald-600 hover:underline"
+              onClick={() => setMode("signup")}
+            >
+              Don’t have an account? Sign up
+            </button>
+          ) : (
+            <button
+              className="font-semibold text-emerald-700 underline-offset-4 transition hover:text-emerald-600 hover:underline"
+              onClick={() => setMode("login")}
+            >
+              Have an account? Log in
+            </button>
+          )}
         </div>
       </div>
     </main>
