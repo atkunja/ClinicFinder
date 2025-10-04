@@ -22,7 +22,6 @@ export async function POST(request: Request) {
     }
 
     const messages: ChatMessage[] = [
-      { role: "system", content: SYSTEM_PROMPT },
       ...history.map((msg) => ({
         role: msg.role === "assistant" ? "assistant" : "user",
         content: String(msg.content ?? ""),
@@ -30,7 +29,10 @@ export async function POST(request: Request) {
       { role: "user", content: question },
     ];
 
-    const answer = await runTriageCompletion(messages);
+    const answer = await runTriageCompletion({
+      systemPrompt: SYSTEM_PROMPT,
+      history: messages,
+    });
     return NextResponse.json({ message: answer });
   } catch (error: any) {
     console.error("triage-error", error);
