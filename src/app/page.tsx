@@ -79,7 +79,7 @@ const faqs = [
   },
   {
     q: "Can I get transportation help?",
-    a: "Many clinics offer bus vouchers or ride-share credits. Look for the Access icon on a clinic profile or call our helpline at (313) 555-0110 for support.",
+    a: "Many clinics offer bus vouchers or ride-share credits. Look for the Access icon on a clinic profile or email our navigators at hello@bibifoundation.org for support.",
   },
   {
     q: "Do you cover mental health services?",
@@ -150,7 +150,7 @@ export default function HomePage() {
               Concierge support
             </h2>
             <p className="mt-3 text-xl font-semibold text-slate-900">
-              Every clinic we list has been verified by a human. Call or text <span className="font-bold">(313) 555-0110</span> if you need help booking.
+              Every clinic we list has been verified by a human. Need help booking? Reach our navigators at <span className="font-bold">hello@bibifoundation.org</span>.
             </p>
             <div className="mt-6 space-y-3 text-sm text-slate-600">
               <div className="flex items-start gap-3">
@@ -298,7 +298,7 @@ export default function HomePage() {
                   SMS
                 </span>
                 <div>
-                  Get visit reminders and prep tips. Text <span className="font-semibold">CARE</span> to <span className="font-semibold">(313) 555-0110</span>.
+                  Get visit reminders and prep tips. Email <span className="font-semibold">hello@bibifoundation.org</span> with the subject line <span className="font-semibold">CARE</span> to subscribe.
                 </div>
               </div>
               <div className="flex items-center gap-3">
@@ -306,7 +306,7 @@ export default function HomePage() {
                   HELP
                 </span>
                 <div>
-                  Talk live with a navigator weekdays 8am – 6pm. After-hours, leave a message and we will respond within a day.
+                  Talk live with a navigator weekdays 8am – 6pm by emailing <span className="font-semibold">hello@bibifoundation.org</span>. After-hours, we reply within one business day.
                 </div>
               </div>
             </div>
