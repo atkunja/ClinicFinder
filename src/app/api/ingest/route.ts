@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import OpenAI from "openai";
 
 export const runtime = "nodejs";
 
@@ -117,20 +116,30 @@ export async function GET(req: Request) {
 
     if (key) {
       try {
-        const openai = new OpenAI({ apiKey: key });
         const instructions = `Return ONLY compact JSON for a public clinic's details. Keys: name,address,phone,website,summary, services[],languages[],eligibility[], hours{Mon,Tue,Wed,Thu,Fri,Sat,Sun}. Prefer short, human-friendly values. If unknown: empty string or []. Website must be the original URL if not found.`;
-        const resp = await openai.chat.completions.create({
-          model,
-          temperature: 0.1,
-          messages: [
-            { role: "system", content: instructions },
-            {
-              role: "user",
-              content: `HTML_START\n${html.slice(0, 200000)}\nHTML_END`,
-            },
-          ],
+        const resp = await fetch("https://api.openai.com/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${key}`,
+          },
+          body: JSON.stringify({
+            model,
+            temperature: 0.1,
+            messages: [
+              { role: "system", content: instructions },
+              {
+                role: "user",
+                content: `HTML_START\n${html.slice(0, 200000)}\nHTML_END`,
+              },
+            ],
+          }),
         });
-        const json = stripCodeFence(resp.choices[0]?.message?.content ?? "");
+
+        if (!resp.ok) throw new Error(`OpenAI request failed (${resp.status})`);
+
+        const data = await resp.json();
+        const json = stripCodeFence(data?.choices?.[0]?.message?.content ?? "");
         out = JSON.parse(json) as IngestResult;
         if (!out.website) out.website = siteUrl;
       } catch {
