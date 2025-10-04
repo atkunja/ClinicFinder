@@ -50,7 +50,7 @@ const services = [
   },
   {
     title: "AI Symptom Triage",
-    summary: "Admins can capture key details with our ChatGPT-powered intake assistant to recommend the right type of clinic before making calls.",
+    summary: "Volunteers can capture key details with our AI-powered intake assistant to recommend the right type of clinic before making calls.",
   },
 ];
 
@@ -148,10 +148,10 @@ export default function HomePage() {
 
           <div className="rounded-2xl border border-white/15 bg-white/10 px-5 py-4 text-sm text-white shadow-inner shadow-white/5 sm:flex sm:items-center sm:justify-between">
             <div className="max-w-lg text-white/80">
-              <strong className="font-semibold text-white">New:</strong> ChatGPT-powered symptom triage helps volunteers capture the right info before booking.
+              <strong className="font-semibold text-white">New:</strong> AI-powered symptom triage helps volunteers capture the right info before booking.
             </div>
             <Link
-              href="/admin/triage"
+              href="/triage"
               className="mt-3 inline-flex items-center gap-2 rounded-full border border-white/40 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-white/10 hover:text-white sm:mt-0"
             >
               Try the assistant →

@@ -262,10 +262,10 @@ export default function AdminPageInner() {
         <div className="text-xs uppercase tracking-[0.25em] text-emerald-700">New beta</div>
         <h2 className="text-lg font-semibold">AI symptom triage assistant</h2>
         <p className="text-sm text-emerald-800/80">
-          Capture presenting concerns, urgency flags, and barriers before scheduling. Powered by OpenAI ChatGPT—review responses before sharing with patients.
+          Capture presenting concerns, urgency flags, and barriers before scheduling. Open to any volunteer account and powered by your configured AI service—review responses before sharing with patients.
         </p>
         <Link
-          href="/admin/triage"
+          href="/triage"
           className="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-emerald-700"
         >
           Launch assistant →
