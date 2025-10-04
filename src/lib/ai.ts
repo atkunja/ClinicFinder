@@ -135,14 +135,16 @@ function inferCondition(text: string): { condition: string; clinic: string } | n
   return null;
 }
 
-function prepareGeminiContents(history: ChatMessage[]) {
+function prepareGeminiPrompt(systemPrompt: string, history: ChatMessage[]) {
   const trimmed = [...history];
   while (trimmed.length && trimmed[0].role !== "user") trimmed.shift();
-  if (!trimmed.length) return [];
-  return trimmed.map((message) => ({
-    role: toGeminiRole(message.role),
-    parts: [{ text: message.content }],
-  }));
+  if (!trimmed.length) return null;
+
+  const transcript = trimmed
+    .map((message) => `${message.role === "assistant" ? "Assistant" : "User"}: ${message.content}`)
+    .join("\n");
+
+  return `${systemPrompt}\n\nConversation so far:\n${transcript}`.trim();
 }
 
 async function callCustomService({
@@ -206,10 +208,6 @@ async function callOpenAI({
   return text && text.length ? text : null;
 }
 
-function toGeminiRole(role: ChatMessage["role"]): "user" | "model" {
-  return role === "assistant" ? "model" : "user";
-}
-
 async function callGemini({
   systemPrompt,
   history,
@@ -219,25 +217,27 @@ async function callGemini({
 }): Promise<string | null> {
   if (!GEMINI_API_KEY) return null;
 
-  const contents = prepareGeminiContents(history);
-  if (!contents.length) return null;
+  const prompt = prepareGeminiPrompt(systemPrompt, history);
+  if (!prompt) return null;
 
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
   const res = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      systemInstruction: {
-        role: "system",
-        parts: [{ text: systemPrompt }],
-      },
-      contents,
+      contents: [
+        {
+          role: "user",
+          parts: [{ text: prompt }],
+        },
+      ],
       generationConfig: { temperature: 0.2 },
     }),
   });
 
   if (!res.ok) {
-    throw new Error(`Gemini request failed (${res.status})`);
+    const errText = await res.text().catch(() => "");
+    throw new Error(`Gemini request failed (${res.status}): ${errText}`);
   }
 
   const data = await res.json();
@@ -331,14 +331,14 @@ export async function runTriageCompletion({
     content: String(msg.content ?? ""),
   }));
 
-  if (!GEMINI_API_KEY) {
-    throw new Error("GEMINI_API_KEY is not set");
+  if (GEMINI_API_KEY) {
+    try {
+      const response = await callGemini({ systemPrompt, history: historyPayload });
+      if (response) return response;
+    } catch (error) {
+      console.error("triage-external-error", error);
+    }
   }
 
-  const response = await callGemini({ systemPrompt, history: historyPayload });
-  if (!response) {
-    throw new Error("Gemini returned an empty response");
-  }
-
-  return response;
+  return buildHeuristicResponse(historyPayload);
 }
