@@ -19,6 +19,8 @@ const INGEST_SERVICE_URL = process.env.INGEST_SERVICE_URL;
 const INGEST_SERVICE_KEY = process.env.INGEST_SERVICE_KEY;
 const OPEN_AI_KEY = process.env.OPEN_AI_KEY;
 const OPEN_AI_MODEL = process.env.OPEN_AI_MODEL ?? "gpt-4o-mini";
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+const GEMINI_MODEL = process.env.GEMINI_MODEL ?? "gemini-1.5-flash";
 
 function stripCodeFence(s: string) {
   return s.replace(/^```(?:json)?/i, "").replace(/```$/i, "").trim();
@@ -161,6 +163,46 @@ async function callOpenAIIngest(html: string, siteUrl: string): Promise<IngestRe
   return out;
 }
 
+async function callGeminiIngest(html: string, siteUrl: string): Promise<IngestResult | null> {
+  if (!GEMINI_API_KEY) return null;
+
+  const instructions = `Return ONLY compact JSON for a public clinic's details. Keys: name,address,phone,website,summary, services[],languages[],eligibility[], hours{Mon,Tue,Wed,Thu,Fri,Sat,Sun}. Prefer short, human-friendly values. If unknown: empty string or []. Website must be the original URL if not found.`;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      systemInstruction: {
+        role: "system",
+        parts: [{ text: instructions }],
+      },
+      contents: [
+        {
+          role: "user",
+          parts: [{ text: `HTML_START\n${html.slice(0, 200000)}\nHTML_END` }],
+        },
+      ],
+      generationConfig: { temperature: 0.1 },
+    }),
+  });
+
+  if (!res.ok) throw new Error(`Gemini ingest request failed (${res.status})`);
+
+  const data = await res.json();
+  const parts = data?.candidates?.[0]?.content?.parts;
+  const text = Array.isArray(parts)
+    ? parts
+        .map((part: any) => (typeof part?.text === "string" ? part.text : ""))
+        .join("\n")
+        .trim()
+    : "";
+  if (!text) return null;
+  const json = stripCodeFence(text);
+  const out = JSON.parse(json) as IngestResult;
+  if (!out.website) out.website = siteUrl;
+  return out;
+}
+
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
@@ -174,6 +216,7 @@ export async function GET(req: Request) {
     const attempts: Array<() => Promise<IngestResult | null>> = [];
 
     if (INGEST_SERVICE_URL) attempts.push(() => callCustomIngest(html, siteUrl));
+    if (GEMINI_API_KEY) attempts.push(() => callGeminiIngest(html, siteUrl));
     if (OPEN_AI_KEY) attempts.push(() => callOpenAIIngest(html, siteUrl));
 
     for (const attempt of attempts) {

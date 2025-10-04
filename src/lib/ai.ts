@@ -30,6 +30,9 @@ const TRIAGE_SERVICE_KEY = process.env.TRIAGE_SERVICE_KEY;
 const OPEN_AI_KEY = process.env.OPEN_AI_KEY;
 const OPEN_AI_MODEL = process.env.OPEN_AI_MODEL ?? "gpt-4o-mini";
 
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+const GEMINI_MODEL = process.env.GEMINI_MODEL ?? "gemini-1.5-flash";
+
 function collectUserText(history: ChatMessage[]): string {
   return history
     .filter((msg) => msg.role === "user")
@@ -147,6 +150,51 @@ async function callOpenAI({
   return text && text.length ? text : null;
 }
 
+function toGeminiRole(role: ChatMessage["role"]): "user" | "model" {
+  return role === "assistant" ? "model" : "user";
+}
+
+async function callGemini({
+  systemPrompt,
+  history,
+}: {
+  systemPrompt: string;
+  history: ChatMessage[];
+}): Promise<string | null> {
+  if (!GEMINI_API_KEY) return null;
+
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      systemInstruction: {
+        role: "system",
+        parts: [{ text: systemPrompt }],
+      },
+      contents: history.map((message) => ({
+        role: toGeminiRole(message.role),
+        parts: [{ text: message.content }],
+      })),
+      generationConfig: { temperature: 0.2 },
+    }),
+  });
+
+  if (!res.ok) {
+    throw new Error(`Gemini request failed (${res.status})`);
+  }
+
+  const data = await res.json();
+  const parts = data?.candidates?.[0]?.content?.parts;
+  const text = Array.isArray(parts)
+    ? parts
+        .map((part: any) => (typeof part?.text === "string" ? part.text : ""))
+        .join("\n")
+        .trim()
+    : null;
+  return text && text.length ? text : null;
+}
+
 function buildHeuristicResponse(history: ChatMessage[]): string {
   const userTranscript = collectUserText(history);
   const latestUser = [...history].reverse().find((msg) => msg.role === "user")?.content ?? "";
@@ -208,6 +256,10 @@ export async function runTriageCompletion({
 
   if (TRIAGE_SERVICE_URL) {
     attempts.push(() => callCustomService({ systemPrompt, history: historyPayload }));
+  }
+
+  if (GEMINI_API_KEY) {
+    attempts.push(() => callGemini({ systemPrompt, history: historyPayload }));
   }
 
   if (OPEN_AI_KEY) {
