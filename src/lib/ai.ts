@@ -38,6 +38,7 @@ const CONDITION_PATTERNS: Array<{
   condition: string;
   clinic: string;
 }> = [
+  { keywords: /(burns? when (?:i )?pee|painful urination|dysuria|urinary burning)/i, condition: "possible urinary tract infection", clinic: "primary care or urgent care clinic" },
   { keywords: /(abscess|infection|pus|swollen gum)/i, condition: "possible tooth abscess", clinic: "urgent dental clinic" },
   { keywords: /(broken tooth|chipped tooth|tooth broke)/i, condition: "dental fracture", clinic: "emergency dental clinic" },
   { keywords: /(bleeding gums|gum bleed)/i, condition: "gum disease or gingivitis", clinic: "dental clinic" },
@@ -330,30 +331,14 @@ export async function runTriageCompletion({
     content: String(msg.content ?? ""),
   }));
 
-  const attempts: Array<() => Promise<string | null>> = [];
-
-  if (TRIAGE_SERVICE_URL) {
-    attempts.push(() => callCustomService({ systemPrompt, history: historyPayload }));
+  if (!GEMINI_API_KEY) {
+    throw new Error("GEMINI_API_KEY is not set");
   }
 
-  if (GEMINI_API_KEY) {
-    attempts.push(() => callGemini({ systemPrompt, history: historyPayload }));
+  const response = await callGemini({ systemPrompt, history: historyPayload });
+  if (!response) {
+    throw new Error("Gemini returned an empty response");
   }
 
-  if (OPEN_AI_KEY) {
-    attempts.push(() => callOpenAI({ systemPrompt, history: historyPayload }));
-  }
-
-  for (const attempt of attempts) {
-    try {
-      const result = await attempt();
-      if (result) {
-        return result;
-      }
-    } catch (error) {
-      console.error("triage-external-error", error);
-    }
-  }
-
-  return buildHeuristicResponse(historyPayload);
+  return response;
 }
