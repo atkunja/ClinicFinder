@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export const metadata = {
-  title: "What to Bring • Healthcare for All",
+  title: "What to Bring • Bibi Foundation",
 };
 
 export default function WhatToBringPage() {

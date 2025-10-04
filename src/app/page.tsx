@@ -2,10 +2,10 @@
 import Link from "next/link";
 
 const metrics = [
-  { label: "Mapped clinics", value: "134" },
-  { label: "Counties served", value: "7" },
-  { label: "Average wait time", value: "<48 hrs" },
-  { label: "Care partners", value: "42" },
+  { label: "Mapped clinics", value: "86" },
+  { label: "Counties served", value: "6" },
+  { label: "Average wait time", value: "36 hrs" },
+  { label: "Care partners", value: "28" },
 ];
 
 const pathway = [
@@ -64,7 +64,7 @@ const testimonials = [
   {
     quote:
       "I volunteer with a free clinic and rely on these updates to keep our intake checklist current and our neighbors informed.",
-    name: "Marcus, RN and volunteer lead",
+    name: "Taha Ilyas, volunteer navigator",
   },
 ];
 
@@ -88,7 +88,7 @@ const faqs = [
 ];
 
 export const metadata = {
-  title: "Healthcare for All",
+  title: "Bibi Foundation",
   description: "Find free or low-cost healthcare clinics near you",
 };
 
@@ -206,7 +206,7 @@ export default function HomePage() {
             <div className="space-y-5">
               <h2 className="text-3xl font-semibold text-slate-900">Your path to care starts with clarity</h2>
               <p className="text-base text-slate-600">
-                We designed Healthcare for All to guide you from feeling stuck to being seen by the right clinician. The pathway is the same whether you are searching for yourself, a loved one, or someone you support professionally.
+                We designed Bibi Foundation to guide you from feeling stuck to being seen by the right clinician. The pathway is the same whether you are searching for yourself, a loved one, or someone you support professionally.
               </p>
               <Link
                 href="/finder"
@@ -289,7 +289,7 @@ export default function HomePage() {
             <div>
               <h3 className="text-lg font-semibold text-slate-900">We never sell your data</h3>
               <p className="mt-3 text-sm text-slate-600">
-                Healthcare for All is run by volunteers and backed by community grants. Your searches stay private, and clinics only see your information when you contact them directly.
+                Bibi Foundation is run by volunteers and backed by community grants. Your searches stay private, and clinics only see your information when you contact them directly.
               </p>
             </div>
             <div className="space-y-3 text-sm text-slate-600">
@@ -310,14 +310,10 @@ export default function HomePage() {
                 </div>
               </div>
             </div>
-            <Link
-              href="/login"
-              className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-emerald-400 to-cyan-400 px-5 py-3 text-sm font-semibold text-slate-900 shadow-lg shadow-cyan-500/20 transition hover:from-emerald-300 hover:to-cyan-300"
-            >
-              Volunteer with us
-              <span aria-hidden>→</span>
-            </Link>
-          </aside>
+            <p className="text-xs text-slate-500">
+              Want to share updated clinic info? Email <a className="underline" href="mailto:hello@bibifoundation.org">hello@bibifoundation.org</a> and our intake team will follow up.
+            </p>
+         </aside>
         </div>
       </section>
 
@@ -328,7 +324,7 @@ export default function HomePage() {
             <div className="space-y-4">
               <h2 className="text-3xl font-semibold text-slate-900">Answers before you travel</h2>
               <p className="text-sm text-slate-600">
-                Our navigators compiled the questions they hear most often. Still unsure? Call us or send a note to <a className="underline" href="mailto:hello@healthcareforall.org">hello@healthcareforall.org</a>.
+                Our navigators compiled the questions they hear most often. Still unsure? Call us or send a note to <a className="underline" href="mailto:hello@bibifoundation.org">hello@bibifoundation.org</a>.
               </p>
             </div>
             <div className="grid gap-6 sm:grid-cols-2">
@@ -349,7 +345,7 @@ export default function HomePage() {
           <div className="relative space-y-6">
             <h2 className="text-3xl font-semibold">Ready when you are</h2>
             <p className="text-base text-slate-800">
-              Whether this is your first visit or you are coordinating care for an entire shelter, Healthcare for All gives you a calm starting point. Log in for volunteer tools or jump straight into the finder.
+              Whether this is your first visit or you are coordinating care for an entire shelter, Bibi Foundation gives you a calm starting point. Log in for volunteer tools or jump straight into the finder.
             </p>
             <div className="flex flex-wrap gap-3">
               <Link
@@ -373,4 +369,3 @@ export default function HomePage() {
     </main>
   );
 }
-
