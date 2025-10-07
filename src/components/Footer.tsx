@@ -1,4 +1,5 @@
 // src/components/Footer.tsx
+import Image from "next/image";
 import Link from "next/link";
 
 const footerLinks = [
@@ -23,17 +24,9 @@ export default function Footer() {
 
       <div className="relative mx-auto flex max-w-6xl flex-col gap-12 px-4 py-14 md:flex-row md:justify-between">
         <div className="max-w-md space-y-4">
-          <Link href="/" className="inline-flex items-center gap-2 text-lg font-semibold">
-            <span
-              aria-hidden
-              className="inline-flex h-9 w-9 items-center justify-center rounded-2xl"
-              style={{
-                background:
-                  "linear-gradient(135deg, rgba(16, 185, 129, 1) 0%, rgba(14, 165, 233, 1) 100%)",
-                boxShadow: "0 12px 30px rgba(14, 165, 233, 0.25)",
-              }}
-            >
-              <span className="text-sm font-bold text-white">ZB</span>
+          <Link href="/" className="inline-flex items-center gap-3 text-lg font-semibold">
+            <span className="inline-flex h-10 w-10 items-center justify-center overflow-hidden rounded-2xl border border-white/40 bg-white/95 shadow-lg shadow-cyan-500/20">
+              <Image src="/logo.png" alt="ZB Impact logo" width={40} height={40} className="h-10 w-10 object-contain" />
             </span>
             ZB Impact
           </Link>

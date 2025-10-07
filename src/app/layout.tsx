@@ -11,6 +11,11 @@ const mono = IBM_Plex_Mono({ subsets: ["latin"], weight: ["400", "600"], variabl
 export const metadata = {
   title: "ZB Impact",
   description: "Find free clinics near you",
+  icons: {
+    icon: "/favicon.png",
+    shortcut: "/favicon.png",
+    apple: "/favicon.png",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

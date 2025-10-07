@@ -1,5 +1,4 @@
 // src/app/page.tsx
-import Image from "next/image";
 import Link from "next/link";
 
 const metrics = [
@@ -108,21 +107,6 @@ export default function HomePage() {
       {/* Hero */}
       <section className="mx-auto flex max-w-6xl flex-col gap-12 px-4 pt-20 text-white sm:pt-24 lg:flex-row lg:items-center">
         <div className="flex-1 space-y-8">
-          <div className="flex items-center gap-4">
-            <span className="inline-flex h-16 w-16 items-center justify-center overflow-hidden rounded-[22px] border border-white/40 bg-white/95 shadow-xl shadow-cyan-500/30">
-              <Image
-                src="/logo.png"
-                alt="ZB Impact logo"
-                width={64}
-                height={64}
-                className="h-16 w-16 object-contain"
-                priority
-              />
-            </span>
-            <span className="text-xs font-semibold uppercase tracking-[0.45em] text-white/70">
-              ZB Impact
-            </span>
-          </div>
           <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-1 text-xs uppercase tracking-[0.35em] text-white/70">
             Free & low-cost care, verified weekly
           </div>
