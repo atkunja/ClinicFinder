@@ -198,8 +198,8 @@ export default function ClinicMap({
   };
 
   return (
-    <div className="app-surface relative overflow-hidden shadow-xl shadow-slate-900/10">
-      <MapContainer center={center} zoom={10} style={{ height: 420, width: '100%' }} scrollWheelZoom>
+    <div className="relative h-full w-full">
+      <MapContainer center={center} zoom={10} className="h-full w-full" scrollWheelZoom>
         <TileLayer
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           attribution="&copy; OpenStreetMap"
@@ -245,27 +245,64 @@ export default function ClinicMap({
               icon={icon}
               eventHandlers={handlers}
             >
-              <Popup>
-                <div style={{ maxWidth: 240 }}>
-                  <div style={{ fontWeight: 600 }}>
-                    {c.name} {c.verified ? '✅' : ''}
+              <Popup className="clinic-popup">
+                <div className="space-y-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <div className="text-sm font-semibold text-slate-900">{c.name}</div>
+                      {Number.isFinite(c.miles) && c.miles !== Infinity && (
+                        <div className="mt-1 text-xs uppercase tracking-wide text-slate-500">
+                          {(c.miles as number).toFixed((c.miles as number) < 10 ? 1 : 0)} miles away
+                        </div>
+                      )}
+                    </div>
+                    {c.verified && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-emerald-700">
+                        <span aria-hidden>✔</span> Verified
+                      </span>
+                    )}
                   </div>
-                  {Number.isFinite(c.miles) && c.miles !== Infinity && (
-                    <div style={{ fontSize: 12, opacity: 0.8 }}>
-                      {(c.miles as number).toFixed((c.miles as number) < 10 ? 1 : 0)} mi away
+                  <div className="text-xs text-slate-600">{c.address}</div>
+                  {!!c.services?.length && (
+                    <div className="flex flex-wrap gap-1.5">
+                      {c.services.slice(0, 3).map((service) => (
+                        <span
+                          key={service}
+                          className="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-medium uppercase tracking-wide text-slate-600"
+                        >
+                          {service}
+                        </span>
+                      ))}
+                      {c.services.length > 3 && (
+                        <span className="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-medium uppercase tracking-wide text-slate-500">
+                          +{c.services.length - 3} more
+                        </span>
+                      )}
                     </div>
                   )}
-                  <div style={{ fontSize: 12, marginTop: 6 }}>{c.address}</div>
-                  <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-                    <a className="underline" href={detailsPath}>
-                      View details →
+                  <div className="flex flex-wrap gap-2 text-xs font-semibold">
+                    <a
+                      className="inline-flex items-center gap-1 rounded-full bg-slate-900 px-3 py-1.5 text-white transition hover:bg-slate-800"
+                      href={detailsPath}
+                    >
+                      View details <span aria-hidden>→</span>
                     </a>
                     {!!c.url && (
-                      <a className="underline" target="_blank" rel="noreferrer" href={c.url}>
+                      <a
+                        className="inline-flex items-center gap-1 rounded-full border border-slate-300 px-3 py-1.5 text-slate-700 transition hover:border-slate-400 hover:text-slate-900"
+                        target="_blank"
+                        rel="noreferrer"
+                        href={c.url}
+                      >
                         Website
                       </a>
                     )}
-                    <a className="underline" target="_blank" rel="noreferrer" href={gmaps}>
+                    <a
+                      className="inline-flex items-center gap-1 rounded-full border border-slate-300 px-3 py-1.5 text-slate-700 transition hover:border-slate-400 hover:text-slate-900"
+                      target="_blank"
+                      rel="noreferrer"
+                      href={gmaps}
+                    >
                       Directions
                     </a>
                   </div>

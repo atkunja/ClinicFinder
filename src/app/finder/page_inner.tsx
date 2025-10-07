@@ -294,26 +294,40 @@ export default function FinderPage() {
 
           {/* Map + List only after location is set */}
           {userCoords ? (
-            <>
-              <div className="app-surface overflow-hidden shadow-xl shadow-slate-900/10">
-                <div className="p-2 sm:p-3">
-                  <ClinicMap
-                    clinics={visibleClinics as any}
-                    userCoords={userCoords}
-                    radiusMiles={radiusMiles}
-                    selectedClinicId={selectedClinicId}
-                  />
+            <div className="grid gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
+              <div className="app-surface flex h-full flex-col overflow-hidden">
+                <div className="flex flex-wrap items-start justify-between gap-4 border-b border-slate-200/50 bg-slate-50/70 px-5 py-4 text-slate-900 sm:px-6">
+                  <div>
+                    <h2 className="text-lg font-semibold text-slate-900">Map overview</h2>
+                    <p className="mt-1 text-xs text-slate-500">
+                      {visibleClinics.length > 0
+                        ? `Showing ${visibleClinics.length} ${visibleClinics.length === 1 ? "clinic" : "clinics"} within ${radiusMiles} miles.`
+                        : `No clinics within ${radiusMiles} miles yet—try widening the radius.`}
+                    </p>
+                  </div>
+                  <div className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.25em] text-white">
+                    {address ? "Searching: " + address : "Using current location"}
+                  </div>
+                </div>
+                <div className="relative flex-1 min-h-[360px] p-3 sm:min-h-[440px] sm:p-4">
+                  <div className="h-full w-full overflow-hidden rounded-[26px] border border-slate-200/50 shadow-inner shadow-slate-900/5">
+                    <ClinicMap
+                      clinics={visibleClinics as any}
+                      userCoords={userCoords}
+                      radiusMiles={radiusMiles}
+                      selectedClinicId={selectedClinicId}
+                    />
+                  </div>
                 </div>
               </div>
 
-              <div>
-                <Results
-                  clinics={visibleClinics as any}
-                  onHover={(id) => setSelectedClinicId(id)}
-                  onLeave={() => setSelectedClinicId(null)}
-                />
-              </div>
-            </>
+              <Results
+                clinics={visibleClinics as any}
+                onHover={(id) => setSelectedClinicId(id)}
+                onLeave={() => setSelectedClinicId(null)}
+                className="lg:max-h-[560px]"
+              />
+            </div>
           ) : (
             <div className="app-surface px-8 py-12 text-center text-slate-600">
               <h2 className="text-lg font-semibold text-slate-900">Let’s find the right clinic</h2>
