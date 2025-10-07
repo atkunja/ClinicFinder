@@ -112,7 +112,7 @@ export default function PreparePage() {
             ))}
           </ul>
           <div className="rounded-2xl border border-emerald-200/60 bg-emerald-50/70 px-4 py-3 text-sm text-emerald-700">
-            Unsure about documentation? Call the clinic a day ahead or contact our navigators at <span className="font-semibold">hello@bibifoundation.org</span>. We will confirm what they need.
+            Unsure about documentation? Call the clinic a day ahead or contact our navigators at <span className="font-semibold">hello@zbimpact.org</span>. We will confirm what they need.
           </div>
         </div>
       </section>

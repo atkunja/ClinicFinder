@@ -40,7 +40,7 @@ export default function Results({
             <ul className="mt-3 list-disc space-y-1 pl-5 text-xs text-slate-500">
               <li>Disable <strong>Verified only</strong> to view every option.</li>
               <li>Expand the search radius or enter a nearby landmark.</li>
-              <li>Need hands-on help? Email <span className="font-semibold">hello@bibifoundation.org</span> and we will guide you.</li>
+              <li>Need hands-on help? Email <span className="font-semibold">hello@zbimpact.org</span> and we will guide you.</li>
             </ul>
           </div>
         ) : (

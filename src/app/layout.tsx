@@ -9,7 +9,7 @@ const sans = Plus_Jakarta_Sans({ subsets: ["latin"], variable: "--font-sans" });
 const mono = IBM_Plex_Mono({ subsets: ["latin"], weight: ["400", "600"], variable: "--font-mono" });
 
 export const metadata = {
-  title: "SolvraFoundation",
+  title: "ZB Impact",
   description: "Find free clinics near you",
 };
 

@@ -79,7 +79,7 @@ const faqs = [
   },
   {
     q: "Can I get transportation help?",
-    a: "Many clinics offer bus vouchers or ride-share credits. Look for the Access icon on a clinic profile or email our navigators at hello@bibifoundation.org for support.",
+    a: "Many clinics offer bus vouchers or ride-share credits. Look for the Access icon on a clinic profile or email our navigators at hello@zbimpact.org for support.",
   },
   {
     q: "Do you cover mental health services?",
@@ -88,7 +88,7 @@ const faqs = [
 ];
 
 export const metadata = {
-  title: "SolvraFoundation",
+  title: "ZB Impact",
   description: "Find free or low-cost healthcare clinics near you",
 };
 
@@ -150,7 +150,7 @@ export default function HomePage() {
               Concierge support
             </h2>
             <p className="mt-3 text-xl font-semibold text-slate-900">
-              Every clinic we list has been verified by a human. Need help booking? Reach our navigators at <span className="font-bold">hello@bibifoundation.org</span>.
+              Every clinic we list has been verified by a human. Need help booking? Reach our navigators at <span className="font-bold">hello@zbimpact.org</span>.
             </p>
             <div className="mt-6 space-y-3 text-sm text-slate-600">
               <div className="flex items-start gap-3">
@@ -206,7 +206,7 @@ export default function HomePage() {
             <div className="space-y-5">
               <h2 className="text-3xl font-semibold text-slate-900">Your path to care starts with clarity</h2>
               <p className="text-base text-slate-600">
-                We designed SolvraFoundation to guide you from feeling stuck to being seen by the right clinician. The pathway is the same whether you are searching for yourself, a loved one, or someone you support professionally.
+                We designed ZB Impact to guide you from feeling stuck to being seen by the right clinician. The pathway is the same whether you are searching for yourself, a loved one, or someone you support professionally.
               </p>
               <Link
                 href="/finder"
@@ -289,7 +289,7 @@ export default function HomePage() {
             <div>
               <h3 className="text-lg font-semibold text-slate-900">We never sell your data</h3>
               <p className="mt-3 text-sm text-slate-600">
-                SolvraFoundation is run by volunteers and backed by community grants. Your searches stay private, and clinics only see your information when you contact them directly.
+                ZB Impact is run by volunteers and backed by community grants. Your searches stay private, and clinics only see your information when you contact them directly.
               </p>
             </div>
             <div className="space-y-3 text-sm text-slate-600">
@@ -298,7 +298,7 @@ export default function HomePage() {
                   SMS
                 </span>
                 <div>
-                  Get visit reminders and prep tips. Email <span className="font-semibold">hello@bibifoundation.org</span> with the subject line <span className="font-semibold">CARE</span> to subscribe.
+                  Get visit reminders and prep tips. Email <span className="font-semibold">hello@zbimpact.org</span> with the subject line <span className="font-semibold">CARE</span> to subscribe.
                 </div>
               </div>
               <div className="flex items-center gap-3">
@@ -306,12 +306,12 @@ export default function HomePage() {
                   HELP
                 </span>
                 <div>
-                  Talk live with a navigator weekdays 8am – 6pm by emailing <span className="font-semibold">hello@bibifoundation.org</span>. After-hours, we reply within one business day.
+                  Talk live with a navigator weekdays 8am – 6pm by emailing <span className="font-semibold">hello@zbimpact.org</span>. After-hours, we reply within one business day.
                 </div>
               </div>
             </div>
             <p className="text-xs text-slate-500">
-              Want to share updated clinic info? Email <a className="underline" href="mailto:hello@bibifoundation.org">hello@bibifoundation.org</a> and our intake team will follow up.
+              Want to share updated clinic info? Email <a className="underline" href="mailto:hello@zbimpact.org">hello@zbimpact.org</a> and our intake team will follow up.
             </p>
          </aside>
         </div>
@@ -324,7 +324,7 @@ export default function HomePage() {
             <div className="space-y-4">
               <h2 className="text-3xl font-semibold text-slate-900">Answers before you travel</h2>
               <p className="text-sm text-slate-600">
-                Our navigators compiled the questions they hear most often. Still unsure? Call us or send a note to <a className="underline" href="mailto:hello@bibifoundation.org">hello@bibifoundation.org</a>.
+                Our navigators compiled the questions they hear most often. Still unsure? Call us or send a note to <a className="underline" href="mailto:hello@zbimpact.org">hello@zbimpact.org</a>.
               </p>
             </div>
             <div className="grid gap-6 sm:grid-cols-2">
@@ -345,7 +345,7 @@ export default function HomePage() {
           <div className="relative space-y-6">
             <h2 className="text-3xl font-semibold">Ready when you are</h2>
             <p className="text-base text-slate-800">
-              Whether this is your first visit or you are coordinating care for an entire shelter, SolvraFoundation gives you a calm starting point. Log in for volunteer tools or jump straight into the finder.
+              Whether this is your first visit or you are coordinating care for an entire shelter, ZB Impact gives you a calm starting point. Log in for volunteer tools or jump straight into the finder.
             </p>
             <div className="flex flex-wrap gap-3">
               <Link

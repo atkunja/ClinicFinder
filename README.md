@@ -1,6 +1,6 @@
-💙 SolvraFoundation — Clinic Access Network
+💙 ZB Impact — Clinic Access Network
 
-SolvraFoundation connects communities with free and low-cost medical, dental, and mental health care across the region.
+ZB Impact connects communities with free and low-cost medical, dental, and mental health care across the region.
 We partner with clinics, volunteers, and social workers to make finding care easy, human, and trustworthy.
 
 🌍 Mission

@@ -28,6 +28,7 @@ export default function NavBar() {
     { href: "/", label: "Home" },
     { href: "/finder", label: "Clinic Finder" },
     { href: "/what-to-bring", label: "What to Bring" },
+    { href: "/mission", label: "Mission" },
   ];
 
   const active = (href: string) =>
@@ -66,10 +67,10 @@ export default function NavBar() {
             aria-hidden
             className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-white/40 bg-gradient-to-br from-emerald-400/90 via-cyan-400/80 to-sky-500/80 shadow-lg shadow-cyan-500/20 transition group-hover:shadow-cyan-400/40"
           >
-            <span className="text-sm font-bold tracking-wide">BF</span>
+            <span className="text-sm font-bold tracking-wide">ZB</span>
           </span>
           <div className="flex flex-col">
-            <span className="text-sm font-semibold leading-tight">SolvraFoundation</span>
+            <span className="text-sm font-semibold leading-tight">ZB Impact</span>
             <span className="text-[11px] uppercase tracking-[0.3em] text-white/60">
               Clinic access network
             </span>

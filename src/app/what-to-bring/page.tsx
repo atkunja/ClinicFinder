@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export const metadata = {
-  title: "What to Bring • SolvraFoundation",
+  title: "What to Bring • ZB Impact",
 };
 
 export default function WhatToBringPage() {

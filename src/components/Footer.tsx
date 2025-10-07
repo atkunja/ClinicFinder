@@ -4,6 +4,7 @@ import Link from "next/link";
 const footerLinks = [
   { label: "Find a Clinic", href: "/finder" },
   { label: "What to Bring", href: "/what-to-bring" },
+  { label: "Mission Statement", href: "/mission" },
   { label: "Prepare for a Visit", href: "/prepare" },
   { label: "Admin", href: "/admin" },
 ];
@@ -32,15 +33,17 @@ export default function Footer() {
                 boxShadow: "0 12px 30px rgba(14, 165, 233, 0.25)",
               }}
             >
-              <span className="text-sm font-bold text-white">BF</span>
+              <span className="text-sm font-bold text-white">ZB</span>
             </span>
-            SolvraFoundation
+            ZB Impact
           </Link>
           <p className="text-sm text-slate-200/80">
             A volunteer-built project connecting people with compassionate, free or low-cost care across Southeast Michigan. We believe healthcare is a right, not a luxury.
           </p>
           <div className="flex gap-3 text-xs text-slate-200/70">
-            <span>Contact: <a className="underline" href="mailto:hello@bibifoundation.org">hello@bibifoundation.org</a></span>
+            <span>
+              Contact: <a className="underline" href="mailto:hello@zbimpact.org">hello@zbimpact.org</a>
+            </span>
             <span aria-hidden>•</span>
             <span>Hours: 7 days a week, 9am – 7pm ET</span>
           </div>
@@ -93,7 +96,7 @@ export default function Footer() {
       </div>
 
       <div className="relative border-t border-white/10 bg-slate-900/60 py-4 text-center text-xs text-slate-300/70">
-        © {new Date().getFullYear()} SolvraFoundation. Built with community partners and volunteer clinicians.
+        © {new Date().getFullYear()} ZB Impact. Built with community partners and volunteer clinicians.
      </div>
     </footer>
   );
