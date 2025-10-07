@@ -1,4 +1,5 @@
 // src/app/mission/page.tsx
+import Image from "next/image";
 import Link from "next/link";
 
 export const metadata = {
@@ -18,7 +19,13 @@ export default function MissionPage() {
         }}
       />
       <div className="relative mx-auto flex max-w-4xl flex-col gap-12 px-4">
-        <header className="space-y-5">
+        <header className="space-y-6">
+          <div className="flex items-center gap-4">
+            <span className="inline-flex h-16 w-16 items-center justify-center overflow-hidden rounded-[22px] border border-white/35 bg-white/95 shadow-xl shadow-cyan-500/30">
+              <Image src="/logo.png" alt="ZB Impact logo" width={64} height={64} className="h-16 w-16 object-contain" />
+            </span>
+            <span className="text-xs font-semibold uppercase tracking-[0.45em] text-white/60">ZB Impact</span>
+          </div>
           <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-1 text-xs uppercase tracking-[0.35em] text-white/60">
             About ZB Impact
           </div>

@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { signOut } from "firebase/auth";
@@ -65,9 +66,16 @@ export default function NavBar() {
         <Link href="/" className="group flex items-center gap-3 text-white">
           <span
             aria-hidden
-            className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-white/40 bg-gradient-to-br from-emerald-400/90 via-cyan-400/80 to-sky-500/80 shadow-lg shadow-cyan-500/20 transition group-hover:shadow-cyan-400/40"
+            className="inline-flex h-10 w-10 items-center justify-center overflow-hidden rounded-2xl border border-white/40 bg-white/90 shadow-lg shadow-cyan-500/20 transition group-hover:shadow-cyan-400/40"
           >
-            <span className="text-sm font-bold tracking-wide">ZB</span>
+            <Image
+              src="/logo.png"
+              alt="ZB Impact logo"
+              width={40}
+              height={40}
+              className="h-10 w-10 object-contain"
+              priority
+            />
           </span>
           <div className="flex flex-col">
             <span className="text-sm font-semibold leading-tight">ZB Impact</span>
