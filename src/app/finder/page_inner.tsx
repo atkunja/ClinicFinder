@@ -6,7 +6,6 @@ import { collection, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import Results from "./results";
 import "leaflet/dist/leaflet.css";
-import RequireAuth from "@/components/RequireAuth";
 
 // Map component (your existing one)
 const ClinicMap = dynamic(() => import("@/components/ClinicMap"), { ssr: false });
@@ -170,8 +169,7 @@ export default function FinderPage() {
   const serviceChips = ["Medical", "Dental", "Mental", "Pediatrics", "Pharmacy", "Vision"];
 
   return (
-    <RequireAuth>
-      <section className="relative min-h-screen px-4 pb-20 pt-20 text-white sm:pb-24 sm:pt-24">
+    <section className="relative min-h-screen px-4 pb-20 pt-20 text-white sm:pb-24 sm:pt-24">
         <div className="mx-auto flex max-w-6xl flex-col gap-10">
           <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div className="max-w-2xl space-y-3">
@@ -341,6 +339,5 @@ export default function FinderPage() {
           )}
         </div>
       </section>
-    </RequireAuth>
   );
 }

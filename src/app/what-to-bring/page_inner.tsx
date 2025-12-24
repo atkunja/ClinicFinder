@@ -2,7 +2,6 @@
 "use client";
 
 import Link from "next/link";
-import RequireAuth from "@/components/RequireAuth";
 
 function Check({ children }: { children: React.ReactNode }) {
   return (
@@ -17,8 +16,7 @@ function Check({ children }: { children: React.ReactNode }) {
 
 export default function WhatToBringInner() {
   return (
-    <RequireAuth>
-      <main className="relative min-h-screen px-4 pb-20 pt-20 text-white sm:pb-24 sm:pt-24">
+    <main className="relative min-h-screen px-4 pb-20 pt-20 text-white sm:pb-24 sm:pt-24">
         <style
           // eslint-disable-next-line react/no-danger
           dangerouslySetInnerHTML={{
@@ -149,6 +147,5 @@ export default function WhatToBringInner() {
           </div>
         </section>
       </main>
-    </RequireAuth>
   );
 }

@@ -15,7 +15,6 @@ import {
 } from "firebase/firestore";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import RequireAuth from "@/components/RequireAuth";
 
 type Coords = [number, number];
 
@@ -191,39 +190,34 @@ export default function ClinicDetailsPage() {
 
   if (loading) {
     return (
-      <RequireAuth>
-        <div className="min-h-screen bg-gray-50 text-slate-900 grid place-items-center">
-          <div className="rounded-2xl border bg-white px-6 py-5 shadow-sm">
-            Loading clinic…
-          </div>
+      <div className="min-h-screen bg-gray-50 text-slate-900 grid place-items-center">
+        <div className="rounded-2xl border bg-white px-6 py-5 shadow-sm">
+          Loading clinic…
         </div>
-      </RequireAuth>
+      </div>
     );
   }
 
   if (err || !clinic) {
     return (
-      <RequireAuth>
-        <div className="min-h-screen bg-gray-50 text-slate-900 grid place-items-center p-6">
-          <div className="max-w-xl w-full">
-            <div className="rounded-2xl border bg-white p-6 shadow-sm">
-              <p className="font-semibold">{err || "Clinic not found."}</p>
-              <button
-                onClick={() => router.push("/finder")}
-                className="mt-3 inline-flex items-center gap-2 rounded-xl border px-4 py-2 text-emerald-700 hover:bg-emerald-50"
-              >
-                ← Back to Clinic Finder
-              </button>
-            </div>
+      <div className="min-h-screen bg-gray-50 text-slate-900 grid place-items-center p-6">
+        <div className="max-w-xl w-full">
+          <div className="rounded-2xl border bg-white p-6 shadow-sm">
+            <p className="font-semibold">{err || "Clinic not found."}</p>
+            <button
+              onClick={() => router.push("/finder")}
+              className="mt-3 inline-flex items-center gap-2 rounded-xl border px-4 py-2 text-emerald-700 hover:bg-emerald-50"
+            >
+              ← Back to Clinic Finder
+            </button>
           </div>
         </div>
-      </RequireAuth>
+      </div>
     );
   }
 
   return (
-    <RequireAuth>
-      <main className="min-h-screen bg-gray-50 text-slate-900">
+    <main className="min-h-screen bg-gray-50 text-slate-900">
         {/* Soft gradient header */}
         <section className="relative overflow-hidden">
           <div
@@ -411,6 +405,5 @@ export default function ClinicDetailsPage() {
           </aside>
         </section>
       </main>
-    </RequireAuth>
   );
 }
