@@ -15,6 +15,7 @@ export default function ZipQuickStart() {
   }
 
   return (
+    <>
     <form onSubmit={handleSubmit} className="space-y-4">
       <h2 className="text-sm font-semibold uppercase tracking-[0.3em] text-slate-600">
         Quick search
@@ -42,5 +43,13 @@ export default function ZipQuickStart() {
         No account needed. We never store your location.
       </p>
     </form>
+
+    <div className="mt-6 rounded-2xl border border-slate-200/70 bg-white/60 p-5">
+      <h3 className="text-sm font-semibold text-slate-900">No insurance needed</h3>
+      <p className="mt-2 text-sm text-slate-600">
+        Every clinic in our finder accepts uninsured patients. Many offer sliding-scale fees based on income, so you only pay what you can afford.
+      </p>
+    </div>
+    </>
   );
 }
