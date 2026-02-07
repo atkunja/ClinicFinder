@@ -9,6 +9,7 @@ type IngestResult = {
   website?: string;
   phone?: string;
   summary?: string;
+  summary_es?: string;
   services?: string[];
   languages?: string[];
   eligibility?: string[];
@@ -107,6 +108,25 @@ async function geocode(address?: string): Promise<[number, number] | undefined> 
   return [la, lo];
 }
 
+async function translateToSpanish(text: string): Promise<string | null> {
+  if (!geminiClient || !text.trim()) return null;
+  try {
+    const model = geminiClient.getGenerativeModel({ model: GEMINI_MODEL });
+    const response = await model.generateContent({
+      systemInstruction: {
+        role: "system",
+        parts: [{ text: "You are a professional English-to-Spanish translator for a healthcare clinic directory. Translate the following clinic description into natural, clear Spanish. Return ONLY the translated text, no explanation." }],
+      },
+      contents: [{ role: "user", parts: [{ text }] }],
+      generationConfig: { temperature: 0.1 },
+    });
+    return response.response?.text?.()?.trim() || null;
+  } catch (err) {
+    console.error("translate-to-spanish-error", err);
+    return null;
+  }
+}
+
 async function callGeminiIngest(html: string, siteUrl: string): Promise<IngestResult | null> {
   if (!geminiClient) return null;
 
@@ -168,6 +188,11 @@ export async function GET(req: Request) {
     if (!merged.coords && merged.address) {
       const gc = await geocode(merged.address);
       if (gc) merged.coords = gc;
+    }
+
+    if (merged.summary) {
+      const es = await translateToSpanish(merged.summary);
+      if (es) merged.summary_es = es;
     }
 
     return NextResponse.json({ ok: true, data: merged });

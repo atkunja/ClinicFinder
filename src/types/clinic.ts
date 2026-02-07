@@ -8,6 +8,7 @@ export type ClinicDoc = {
   services: string[];
   coords: Coords;
   summary?: string;
+  summary_es?: string;
   slug?: string;
   nameLower?: string;
 };

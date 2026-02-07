@@ -21,6 +21,7 @@ export type Clinic = {
   services?: string[];
   coords: Coords;
   summary?: string;
+  summary_es?: string;
   slug?: string;
   verified?: boolean;
   languages?: string[];

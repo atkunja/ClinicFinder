@@ -27,6 +27,7 @@ type ClinicDoc = {
   services?: string[] | string;
   coords: Coords | [string, string] | { lat: number | string; lng: number | string } | unknown;
   summary?: string;
+  summary_es?: string;
   slug?: string;
   verified?: boolean;
   languages?: string[] | string;
@@ -94,7 +95,7 @@ function parseHours(h?: Record<string, string> | string) {
 export default function ClinicDetailsPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const { t } = useLang();
+  const { t, lang } = useLang();
 
   const [clinic, setClinic] = useState<(ClinicDoc & { id: string }) | null>(null);
   const [loading, setLoading] = useState(true);
@@ -296,7 +297,7 @@ export default function ClinicDetailsPage() {
               <h2 className="mb-2 text-lg font-semibold">{t.clinicDetail.aboutThisClinic}</h2>
               {clinic.summary ? (
                 <p className="whitespace-pre-line leading-7 text-slate-700">
-                  {clinic.summary}
+                  {lang === "es" ? (clinic.summary_es || clinic.summary) : clinic.summary}
                 </p>
               ) : (
                 <p className="text-slate-600">

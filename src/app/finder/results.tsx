@@ -13,6 +13,7 @@ export type Clinic = {
   services?: string[];
   coords: Coords;
   summary?: string;
+  summary_es?: string;
   slug?: string;
   verified?: boolean;
   miles?: number;
@@ -31,7 +32,7 @@ export default function Results({
   onLeave?: () => void;
   className?: string;
 }) {
-  const { t } = useLang();
+  const { t, lang } = useLang();
 
   return (
     <section className={`flex h-full flex-col ${className}`}>
@@ -117,7 +118,7 @@ export default function Results({
                         </div>
                       )}
                       {clinic.summary && (
-                        <p className="text-sm text-slate-600">{clinic.summary}</p>
+                        <p className="text-sm text-slate-600">{lang === "es" ? (clinic.summary_es || clinic.summary) : clinic.summary}</p>
                       )}
                     </div>
 

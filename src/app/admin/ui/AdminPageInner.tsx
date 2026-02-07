@@ -18,6 +18,7 @@ export type Clinic = {
   services: string[];
   coords: Coords;
   summary?: string;
+  summary_es?: string;
   verified?: boolean;
   languages?: string[];
   eligibility?: string[];
@@ -43,6 +44,8 @@ export default function AdminPageInner() {
   // busy flags
   const [busyAutofill, setBusyAutofill] = useState(false);
   const [busySave, setBusySave] = useState(false);
+  const [busyTranslateAll, setBusyTranslateAll] = useState(false);
+  const [translateProgress, setTranslateProgress] = useState("");
 
   // form fields
   const [id, setId] = useState("");
@@ -57,6 +60,7 @@ export default function AdminPageInner() {
   const [lng, setLng] = useState("0");
   const [verified, setVerified] = useState(false);
   const [summary, setSummary] = useState("");
+  const [summaryEs, setSummaryEs] = useState("");
   const [hours, setHours] = useState<Record<string,string>>({ Mon:"",Tue:"",Wed:"",Thu:"",Fri:"",Sat:"",Sun:"" });
 
   const [editingId, setEditingId] = useState<string|null>(null);
@@ -83,6 +87,7 @@ export default function AdminPageInner() {
     setLat("0"); setLng("0");
     setVerified(false);
     setSummary("");
+    setSummaryEs("");
     setHours({ Mon:"",Tue:"",Wed:"",Thu:"",Fri:"",Sat:"",Sun:"" });
   }
 
@@ -100,6 +105,7 @@ export default function AdminPageInner() {
     setLng(String(c.coords?.[1] ?? "0"));
     setVerified(!!c.verified);
     setSummary(c.summary || "");
+    setSummaryEs(c.summary_es || "");
     setHours({
       Mon: c.hours?.Mon || "", Tue: c.hours?.Tue || "", Wed: c.hours?.Wed || "",
       Thu: c.hours?.Thu || "", Fri: c.hours?.Fri || "", Sat: c.hours?.Sat || "", Sun: c.hours?.Sun || "",
@@ -142,6 +148,7 @@ export default function AdminPageInner() {
       setLanguagesInput(Array.isArray(d.languages) ? d.languages.join(", ") : "");
       setEligibilityInput(Array.isArray(d.eligibility) ? d.eligibility.join(", ") : "");
       setSummary(decodeHtml(d.summary || ""));
+      setSummaryEs(decodeHtml(d.summary_es || ""));
 
       // normalize hours keys
       const h = d?.hours || {};
@@ -202,6 +209,7 @@ export default function AdminPageInner() {
         services: csvToArray(servicesInput),
         coords: [la, lo],
         summary: summary.trim() || undefined,
+        summary_es: summaryEs.trim() || undefined,
         verified,
         languages: csvToArray(languagesInput),
         eligibility: csvToArray(eligibilityInput),
@@ -250,13 +258,48 @@ export default function AdminPageInner() {
     }
   }
 
+  async function translateAllClinics() {
+    const missing = clinics.filter(c => c.summary && !c.summary_es);
+    if (!missing.length) return alert("All clinics with summaries already have Spanish translations.");
+    if (!confirm(`Translate ${missing.length} clinic(s) to Spanish?`)) return;
+    setBusyTranslateAll(true);
+    let done = 0;
+    for (const c of missing) {
+      setTranslateProgress(`Translating ${done + 1}/${missing.length}: ${c.name}`);
+      try {
+        const res = await fetch("/api/admin/translate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text: c.summary }),
+        });
+        const json = await res.json();
+        if (json?.ok && json.summary_es) {
+          await setDoc(doc(db, "clinics", c.id), { summary_es: json.summary_es }, { merge: true });
+        }
+      } catch (err) {
+        console.error(`Failed to translate ${c.name}:`, err);
+      }
+      done++;
+    }
+    setTranslateProgress("");
+    setBusyTranslateAll(false);
+    alert(`Done! Translated ${done} clinic(s).`);
+  }
+
   const verifiedCount = useMemo(() => clinics.filter(c => c.verified).length, [clinics]);
 
   return (
     <div className="admin-scope max-w-4xl mx-auto px-4 py-6 text-black">
       <Link href="/finder" className="text-emerald-700 underline">&larr; Back to Finder</Link>
       <h1 className="text-2xl font-bold mt-3 mb-4">Admin Dashboard</h1>
-      <div className="mb-4 text-sm opacity-80">Total clinics: {clinics.length} · Verified: {verifiedCount}</div>
+      <div className="mb-4 flex items-center gap-4 text-sm opacity-80">
+        <span>Total clinics: {clinics.length} · Verified: {verifiedCount}</span>
+        <button type="button" disabled={busyTranslateAll} onClick={translateAllClinics}
+          className="px-3 py-1 border rounded bg-white text-black disabled:opacity-60">
+          {busyTranslateAll ? "Translating…" : "Translate All to Spanish"}
+        </button>
+        {translateProgress && <span className="text-xs">{translateProgress}</span>}
+      </div>
       {/* FORM */}
       <form onSubmit={saveClinic} className="rounded-lg border p-4 space-y-3 bg-white text-black">
         <h2 className="font-semibold">Add / Edit Clinic</h2>
@@ -321,7 +364,10 @@ export default function AdminPageInner() {
         </div>
 
         <textarea className="border rounded px-3 py-2 w-full h-28 bg-white text-black placeholder:text-gray-500"
-          placeholder="Summary" value={summary} onChange={(e)=>setSummary(e.target.value)} />
+          placeholder="Summary (English)" value={summary} onChange={(e)=>setSummary(e.target.value)} />
+
+        <textarea className="border rounded px-3 py-2 w-full h-28 bg-white text-black placeholder:text-gray-500"
+          placeholder="Summary (Spanish) — auto-filled on scrape" value={summaryEs} onChange={(e)=>setSummaryEs(e.target.value)} />
 
         <div className="flex gap-2">
           <button type="submit" disabled={busySave} className="px-3 py-2 rounded bg-emerald-600 text-white disabled:opacity-60">
