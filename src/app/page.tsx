@@ -1,12 +1,6 @@
 // src/app/page.tsx
 import Link from "next/link";
-
-const metrics = [
-  { label: "Mapped clinics", value: "86" },
-  { label: "Counties served", value: "6" },
-  { label: "Average wait time", value: "36 hrs" },
-  { label: "Care partners", value: "28" },
-];
+import LiveMetrics from "@/components/LiveMetrics";
 
 const pathway = [
   {
@@ -116,14 +110,7 @@ export default function HomePage() {
               Checklist: what to bring
             </Link>
           </div>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {metrics.map((metric) => (
-              <div key={metric.label} className="rounded-2xl border border-white/15 bg-white/10 px-5 py-4 shadow-inner shadow-white/5">
-                <div className="text-2xl font-semibold text-white">{metric.value}</div>
-                <div className="text-xs uppercase tracking-wide text-white/60">{metric.label}</div>
-              </div>
-            ))}
-          </div>
+          <LiveMetrics />
         </div>
 
         <div className="flex-1">
