@@ -10,16 +10,16 @@ const metrics = [
 
 const pathway = [
   {
-    title: "Tell us where it hurts",
-    body: "Search by address or the type of care you need. We surface clinics with proven experience for your situation.",
+    title: "Search for clinics",
+    body: "Use the clinic finder to browse free and sliding-scale clinics by location and type of care.",
   },
   {
-    title: "Review clinic readiness",
-    body: "See eligibility, required documents, languages spoken, and patient reviews gathered by our volunteers.",
+    title: "Review clinic details",
+    body: "Check services offered, cost information, and what documents may be required.",
   },
   {
-    title: "Arrive confident",
-    body: "Use our checklists, transit tips, and call scripts so nothing stands between you and the care you deserve.",
+    title: "Contact the clinic directly",
+    body: "Reach out to the clinic to schedule an appointment or confirm eligibility.",
   },
 ];
 
@@ -50,23 +50,6 @@ const services = [
   },
 ];
 
-const testimonials = [
-  {
-    quote:
-      "When my grandma’s denture cracked, we found a dental day clinic through this network. She was seen the same afternoon and hasn’t stopped smiling since.",
-    name: "Amina, Detroit caregiver",
-  },
-  {
-    quote:
-      "The finder helped me compare clinics that speak Spanish and accept patients without insurance. Now my son’s asthma is finally under control.",
-    name: "Lucía, Southwest Detroit",
-  },
-  {
-    quote:
-      "I volunteer with a free clinic and rely on these updates to keep our intake checklist current and our neighbors informed.",
-    name: "Taha Ilyas, volunteer navigator",
-  },
-];
 
 const faqs = [
   {
@@ -115,7 +98,7 @@ export default function HomePage() {
               Finding care should feel supportive, not stressful.
             </h1>
             <p className="max-w-xl text-lg text-white/80">
-              We work with local clinics, social workers, and volunteers to make sure every neighbor can access compassionate medical, dental, and mental health services without wondering where to start.
+              We compile and maintain a clinic finder that helps people locate free and low-cost medical, dental, and mental health care, without the confusion of figuring out where to start.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-4">
@@ -176,37 +159,15 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Story highlight */}
-      <section className="mx-auto mt-16 max-w-5xl px-4 sm:mt-24">
-        <div className="relative overflow-hidden rounded-[32px] border border-white/15 bg-white/10 p-6 text-white shadow-2xl shadow-cyan-500/20 sm:p-10">
-          <div className="absolute -right-10 -top-16 h-40 w-40 rounded-full bg-gradient-to-br from-white/50 to-transparent blur-3xl" />
-          <div className="absolute -bottom-16 -left-10 hidden h-48 w-48 rounded-full bg-gradient-to-br from-emerald-500/40 to-transparent blur-3xl md:block" />
-          <div className="relative space-y-6">
-            <p className="text-lg text-white/80">
-              "My grandma’s denture cracked the week before Easter. We opened the finder, hit Dental, and had her routed to a mobile clinic that same afternoon. They patched her smile, helped us schedule a follow-up, and even arranged a ride back home. She tells everyone the team saved her teeth and her pride."
-            </p>
-            <div className="flex items-center gap-3 text-sm font-medium text-white">
-              <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-slate-900">
-                ✨
-              </span>
-              <div>
-                <div>Amina’s family</div>
-                <div className="text-xs uppercase tracking-[0.3em] text-white/60">Highland Park, MI</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* Care pathway */}
       <section className="mx-auto mt-16 max-w-6xl px-4 sm:mt-24">
         <div className="app-surface relative overflow-hidden p-6 sm:p-10">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(59,130,246,0.12),_transparent_55%)]" aria-hidden />
           <div className="relative grid gap-10 md:grid-cols-[320px_1fr]">
             <div className="space-y-5">
-              <h2 className="text-3xl font-semibold text-slate-900">Your path to care starts with clarity</h2>
+              <h2 className="text-3xl font-semibold text-slate-900">Help Finding Care</h2>
               <p className="text-base text-slate-600">
-                We designed ZB Impact to guide you from feeling stuck to being seen by the right clinician. The pathway is the same whether you are searching for yourself, a loved one, or someone you support professionally.
+                Our clinic finder brings together verified information on free and low-cost clinics, all in one place. Use the steps below to find care and know what to expect before your visit.
               </p>
               <Link
                 href="/finder"
@@ -259,61 +220,6 @@ export default function HomePage() {
               </div>
             </div>
           ))}
-        </div>
-      </section>
-
-      {/* Testimonials */}
-      <section className="mx-auto mt-16 max-w-6xl px-4 sm:mt-24">
-        <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
-          <div className="app-surface relative overflow-hidden p-6 sm:p-8">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(13,148,136,0.15),_transparent_60%)]" aria-hidden />
-            <div className="relative space-y-4">
-              <h2 className="text-3xl font-semibold text-slate-900">Built with and for community</h2>
-              <p className="text-base text-slate-600">
-                Social workers, clinic directors, city agencies, and volunteers co-create every update in our database. The result: accurate, compassionate guidance when families need it most.
-              </p>
-              <div className="grid gap-4 sm:grid-cols-2">
-                {testimonials.map((testimonial) => (
-                  <blockquote key={testimonial.name} className="rounded-2xl border border-slate-200/70 bg-white p-6 text-sm text-slate-700 shadow-sm">
-                    <p className="leading-relaxed">“{testimonial.quote}”</p>
-                    <footer className="mt-4 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
-                      {testimonial.name}
-                    </footer>
-                  </blockquote>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <aside className="glass-panel relative flex flex-col justify-between gap-6 p-6 text-slate-900 sm:p-8">
-            <div>
-              <h3 className="text-lg font-semibold text-slate-900">We never sell your data</h3>
-              <p className="mt-3 text-sm text-slate-600">
-                ZB Impact is run by volunteers and backed by community grants. Your searches stay private, and clinics only see your information when you contact them directly.
-              </p>
-            </div>
-            <div className="space-y-3 text-sm text-slate-600">
-              <div className="flex items-center gap-3">
-                <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-emerald-600/10 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700">
-                  SMS
-                </span>
-                <div>
-                  Get visit reminders and prep tips. Email <span className="font-semibold">hello@zbimpact.org</span> with the subject line <span className="font-semibold">CARE</span> to subscribe.
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-cyan-600/10 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-700">
-                  HELP
-                </span>
-                <div>
-                  Talk live with a navigator weekdays 8am – 6pm by emailing <span className="font-semibold">hello@zbimpact.org</span>. After-hours, we reply within one business day.
-                </div>
-              </div>
-            </div>
-            <p className="text-xs text-slate-500">
-              Want to share updated clinic info? Email <a className="underline" href="mailto:hello@zbimpact.org">hello@zbimpact.org</a> and our intake team will follow up.
-            </p>
-         </aside>
         </div>
       </section>
 

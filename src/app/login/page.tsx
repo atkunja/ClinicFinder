@@ -9,7 +9,6 @@ import {
   createUserWithEmailAndPassword,
   signInWithPopup,
   GoogleAuthProvider,
-  OAuthProvider,
   onAuthStateChanged,
 } from "firebase/auth";
 import { auth } from "@/lib/firebase";
@@ -79,20 +78,6 @@ export default function LoginPage() {
     }
   }
 
-  // Apple sign-in (requires Apple setup; see notes below)
-  async function signInWithApple() {
-    setMsg("");
-    try {
-      const provider = new OAuthProvider("apple.com");
-      provider.addScope("email");
-      provider.addScope("name");
-      await signInWithPopup(auth, provider);
-    } catch (e: unknown) {
-      const errorMessage = e instanceof Error ? e.message : "Apple sign-in failed";
-      setMsg(errorMessage);
-    }
-  }
-
   return (
     <main className="flex min-h-screen items-center justify-center px-4 pb-20 pt-20 text-white sm:pb-24 sm:pt-24">
       <div className="glass-panel w-full max-w-md p-6 text-slate-900 sm:p-8">
@@ -140,13 +125,6 @@ export default function LoginPage() {
             className="w-full rounded-full border border-slate-200/80 bg-white px-4 py-2.5 text-sm font-medium text-slate-800 transition hover:border-emerald-200 hover:text-slate-900"
           >
             Continue with Google
-          </button>
-          <button
-            type="button"
-            onClick={signInWithApple}
-            className="w-full rounded-full border border-slate-200/80 bg-white px-4 py-2.5 text-sm font-medium text-slate-800 transition hover:border-emerald-200 hover:text-slate-900"
-          >
-            Continue with Apple
           </button>
         </div>
 
