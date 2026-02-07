@@ -27,7 +27,7 @@ const CITY_COUNTY: Record<string, string> = {
   berkley: "Oakland", birmingham: "Oakland", "bloomfield hills": "Oakland",
   "west bloomfield": "Oakland", novi: "Oakland",
   "rochester hills": "Oakland", rochester: "Oakland",
-  clawson: "Oakland", "madison heights": "Oakland", hazel park: "Oakland",
+  clawson: "Oakland", "madison heights": "Oakland", "hazel park": "Oakland",
   // Macomb County
   warren: "Macomb", "sterling heights": "Macomb",
   "clinton township": "Macomb", roseville: "Macomb",
