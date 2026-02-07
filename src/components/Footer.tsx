@@ -1,16 +1,20 @@
-// src/components/Footer.tsx
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
-
-const footerLinks = [
-  { label: "Find a Clinic", href: "/finder" },
-  { label: "What to Bring", href: "/what-to-bring" },
-  { label: "Mission Statement", href: "/mission" },
-  { label: "Prepare for a Visit", href: "/prepare" },
-  { label: "Admin", href: "/admin" },
-];
+import { useLang } from "@/i18n/LangProvider";
 
 export default function Footer() {
+  const { t } = useLang();
+
+  const footerLinks = [
+    { label: t.footer.findAClinic, href: "/finder" },
+    { label: t.footer.whatToBring, href: "/what-to-bring" },
+    { label: t.footer.missionStatement, href: "/mission" },
+    { label: t.footer.prepareForVisit, href: "/prepare" },
+    { label: t.nav.admin, href: "/admin" },
+  ];
+
   return (
     <footer className="relative mt-24 border-t border-white/5 bg-white/5 text-slate-100">
       <div
@@ -31,20 +35,20 @@ export default function Footer() {
             ZB Impact
           </Link>
           <p className="text-sm text-slate-200/80">
-            A volunteer-built project connecting people with compassionate, free or low-cost care across Southeast Michigan. We believe healthcare is a right, not a luxury.
+            {t.footer.description}
           </p>
           <div className="flex gap-3 text-xs text-slate-200/70">
             <span>
-              Contact: <a className="underline" href="mailto:hello@zbimpact.org">hello@zbimpact.org</a>
+              {t.footer.contact} <a className="underline" href="mailto:hello@zbimpact.org">hello@zbimpact.org</a>
             </span>
-            <span aria-hidden>•</span>
-            <span>Hours: 7 days a week, 9am – 7pm ET</span>
+            <span aria-hidden>&bull;</span>
+            <span>{t.footer.hours}</span>
           </div>
         </div>
 
         <div className="grid flex-1 gap-12 text-sm sm:grid-cols-2 md:gap-16">
           <div>
-            <h3 className="font-semibold text-white/80">Explore</h3>
+            <h3 className="font-semibold text-white/80">{t.footer.explore}</h3>
             <ul className="mt-4 space-y-2 text-white/60">
               {footerLinks.map((link) => (
                 <li key={link.href}>
@@ -56,11 +60,11 @@ export default function Footer() {
             </ul>
           </div>
           <div>
-            <h3 className="font-semibold text-white/80">Support</h3>
+            <h3 className="font-semibold text-white/80">{t.footer.support}</h3>
             <ul className="mt-4 space-y-2 text-white/60">
               <li>
                 <Link href="/login" className="transition hover:text-white">
-                  Volunteer login
+                  {t.footer.volunteerLogin}
                 </Link>
               </li>
               <li>
@@ -70,7 +74,7 @@ export default function Footer() {
                   rel="noreferrer"
                   className="transition hover:text-white"
                 >
-                  Additional care resources
+                  {t.footer.additionalCareResources}
                 </a>
               </li>
               <li>
@@ -80,7 +84,7 @@ export default function Footer() {
                   rel="noreferrer"
                   className="transition hover:text-white"
                 >
-                  Coverage counseling
+                  {t.footer.coverageCounseling}
                 </a>
               </li>
             </ul>
@@ -89,7 +93,7 @@ export default function Footer() {
       </div>
 
       <div className="relative border-t border-white/10 bg-slate-900/60 py-4 text-center text-xs text-slate-300/70">
-        © {new Date().getFullYear()} ZB Impact. Built with community partners and volunteer clinicians.
+        &copy; {new Date().getFullYear()} {t.footer.copyright}
      </div>
     </footer>
   );

@@ -15,6 +15,7 @@ import {
 } from "firebase/firestore";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { useLang } from "@/i18n/LangProvider";
 
 type Coords = [number, number];
 
@@ -93,6 +94,7 @@ function parseHours(h?: Record<string, string> | string) {
 export default function ClinicDetailsPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  const { t } = useLang();
 
   const [clinic, setClinic] = useState<(ClinicDoc & { id: string }) | null>(null);
   const [loading, setLoading] = useState(true);
@@ -126,18 +128,18 @@ export default function ClinicDetailsPage() {
         }
 
         if (!data) {
-          setErr("Clinic not found.");
+          setErr(t.clinicDetail.clinicNotFound);
         } else {
           setClinic(data);
         }
       } catch (e) {
         console.error(e);
-        setErr("Error loading clinic. Please try again.");
+        setErr(t.clinicDetail.errorLoading);
       } finally {
         setLoading(false);
       }
     })();
-  }, [id]);
+  }, [id, t]);
 
   // Init Leaflet map once we have coords
   useEffect(() => {
@@ -192,7 +194,7 @@ export default function ClinicDetailsPage() {
     return (
       <div className="min-h-screen bg-gray-50 text-slate-900 grid place-items-center">
         <div className="rounded-2xl border bg-white px-6 py-5 shadow-sm">
-          Loading clinic…
+          {t.clinicDetail.loadingClinic}
         </div>
       </div>
     );
@@ -203,12 +205,12 @@ export default function ClinicDetailsPage() {
       <div className="min-h-screen bg-gray-50 text-slate-900 grid place-items-center p-6">
         <div className="max-w-xl w-full">
           <div className="rounded-2xl border bg-white p-6 shadow-sm">
-            <p className="font-semibold">{err || "Clinic not found."}</p>
+            <p className="font-semibold">{err || t.clinicDetail.clinicNotFound}</p>
             <button
               onClick={() => router.push("/finder")}
               className="mt-3 inline-flex items-center gap-2 rounded-xl border px-4 py-2 text-emerald-700 hover:bg-emerald-50"
             >
-              ← Back to Clinic Finder
+              &larr; {t.clinicDetail.backToFinder}
             </button>
           </div>
         </div>
@@ -233,7 +235,7 @@ export default function ClinicDetailsPage() {
               onClick={() => router.push("/finder")}
               className="text-emerald-700 hover:underline"
             >
-              ← Back to Clinic Finder
+              &larr; {t.clinicDetail.backToFinder}
             </button>
 
             <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -243,7 +245,7 @@ export default function ClinicDetailsPage() {
               <div className="flex flex-wrap gap-2">
                 {clinic.verified && (
                   <span className="inline-flex items-center rounded-full bg-emerald-100 px-3 py-1 text-sm font-medium text-emerald-800">
-                    ✅ Verified
+                    &#10004; {t.clinicDetail.verified}
                   </span>
                 )}
                 {services.length > 0 && (
@@ -265,7 +267,7 @@ export default function ClinicDetailsPage() {
                   rel="noreferrer"
                   className="inline-flex items-center justify-center rounded-xl bg-slate-900 px-4 py-2 text-white shadow-sm transition hover:bg-slate-800"
                 >
-                  Visit Website
+                  {t.clinicDetail.visitWebsite}
                 </a>
               )}
               <a
@@ -274,7 +276,7 @@ export default function ClinicDetailsPage() {
                 rel="noreferrer"
                 className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2 text-slate-800 shadow-sm transition hover:bg-slate-50"
               >
-                Get Directions
+                {t.clinicDetail.getDirections}
               </a>
             </div>
           </div>
@@ -291,14 +293,14 @@ export default function ClinicDetailsPage() {
 
             {/* Summary */}
             <div className="rounded-2xl border bg-white p-5 shadow-sm">
-              <h2 className="mb-2 text-lg font-semibold">About this clinic</h2>
+              <h2 className="mb-2 text-lg font-semibold">{t.clinicDetail.aboutThisClinic}</h2>
               {clinic.summary ? (
                 <p className="whitespace-pre-line leading-7 text-slate-700">
                   {clinic.summary}
                 </p>
               ) : (
                 <p className="text-slate-600">
-                  No summary yet. Visit the website above for more details.
+                  {t.clinicDetail.noSummary}
                 </p>
               )}
             </div>
@@ -308,7 +310,7 @@ export default function ClinicDetailsPage() {
           <aside className="space-y-5">
             {/* Contact */}
             <div className="rounded-2xl border bg-white p-5 shadow-sm">
-              <h3 className="text-sm font-semibold text-slate-800">Contact</h3>
+              <h3 className="text-sm font-semibold text-slate-800">{t.clinicDetail.contact}</h3>
               <div className="mt-2 space-y-1 text-sm text-slate-700">
                 <div>{clinic.address}</div>
                 {clinic.phone && (
@@ -335,7 +337,7 @@ export default function ClinicDetailsPage() {
             {/* Services */}
             {services.length > 0 && (
               <div className="rounded-2xl border bg-white p-5 shadow-sm">
-                <h3 className="text-sm font-semibold text-slate-800">Services</h3>
+                <h3 className="text-sm font-semibold text-slate-800">{t.clinicDetail.services}</h3>
                 <div className="mt-2 flex flex-wrap gap-2">
                   {services.map((s) => (
                     <span
@@ -352,7 +354,7 @@ export default function ClinicDetailsPage() {
             {/* Languages */}
             {langs.length > 0 && (
               <div className="rounded-2xl border bg-white p-5 shadow-sm">
-                <h3 className="text-sm font-semibold text-slate-800">Languages</h3>
+                <h3 className="text-sm font-semibold text-slate-800">{t.clinicDetail.languages}</h3>
                 <div className="mt-2 flex flex-wrap gap-2">
                   {langs.map((s) => (
                     <span
@@ -369,7 +371,7 @@ export default function ClinicDetailsPage() {
             {/* Eligibility */}
             {elig.length > 0 && (
               <div className="rounded-2xl border bg-white p-5 shadow-sm">
-                <h3 className="text-sm font-semibold text-slate-800">Eligibility</h3>
+                <h3 className="text-sm font-semibold text-slate-800">{t.clinicDetail.eligibility}</h3>
                 <ul className="mt-2 list-disc pl-5 text-sm text-slate-700">
                   {elig.map((e) => (
                     <li key={e}>{e}</li>
@@ -381,7 +383,7 @@ export default function ClinicDetailsPage() {
             {/* Hours */}
             {hours && (
               <div className="rounded-2xl border bg-white p-5 shadow-sm">
-                <h3 className="text-sm font-semibold text-slate-800">Hours</h3>
+                <h3 className="text-sm font-semibold text-slate-800">{t.clinicDetail.hours}</h3>
                 <div className="mt-2 grid grid-cols-2 gap-y-1 text-sm text-slate-700">
                   {[
                     "Mon",
@@ -395,7 +397,7 @@ export default function ClinicDetailsPage() {
                     <div key={d} className="flex justify-between gap-3 col-span-2">
                       <span className="w-16 text-slate-500">{d}</span>
                       <span className="flex-1 text-right">
-                        {(hours as Record<string, string>)[d] ?? "—"}
+                        {(hours as Record<string, string>)[d] ?? "\u2014"}
                       </span>
                     </div>
                   ))}

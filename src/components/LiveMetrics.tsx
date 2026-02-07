@@ -3,9 +3,10 @@
 import { useEffect, useState } from "react";
 import { collection, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { useLang } from "@/i18n/LangProvider";
 
 /*
-  SE Michigan city → county mapping.
+  SE Michigan city -> county mapping.
   Add entries here as clinics expand to new cities.
 */
 const CITY_COUNTY: Record<string, string> = {
@@ -42,7 +43,7 @@ const CITY_COUNTY: Record<string, string> = {
 };
 
 function extractCity(address: string): string {
-  // "123 Main St, Detroit, MI 48201" → "detroit"
+  // "123 Main St, Detroit, MI 48201" -> "detroit"
   const parts = address.split(",").map((p) => p.trim());
   if (parts.length >= 3) return parts[parts.length - 2].toLowerCase();
   if (parts.length === 2) return parts[0].toLowerCase();
@@ -64,6 +65,7 @@ function countCounties(addresses: string[]): number {
 export default function LiveMetrics() {
   const [clinicCount, setClinicCount] = useState<number | null>(null);
   const [countyCount, setCountyCount] = useState<number | null>(null);
+  const { t } = useLang();
 
   useEffect(() => {
     const ref = collection(db, "clinics");
@@ -76,8 +78,8 @@ export default function LiveMetrics() {
   }, []);
 
   const metrics = [
-    { label: "Mapped clinics", value: clinicCount ?? "—" },
-    { label: "Counties served", value: countyCount ?? "—" },
+    { label: t.liveMetrics.mappedClinics, value: clinicCount ?? "\u2014" },
+    { label: t.liveMetrics.countiesServed, value: countyCount ?? "\u2014" },
   ];
 
   return (

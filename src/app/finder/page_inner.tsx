@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import dynamic from "next/dynamic";
 import { collection, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { useLang, tpl } from "@/i18n/LangProvider";
 import Results from "./results";
 import "leaflet/dist/leaflet.css";
 
@@ -67,6 +68,7 @@ export default function FinderPage() {
   const [userCoords, setUserCoords] = useState<Coords | null>(null);
   const [radiusMiles, setRadiusMiles] = useState(50);
   const [selectedClinicId, setSelectedClinicId] = useState<string | null>(null);
+  const { t } = useLang();
 
   // Address search state
   const searchParams = useSearchParams();
@@ -185,20 +187,21 @@ export default function FinderPage() {
       .sort((a, b) => (a.miles as number) - (b.miles as number));
   }, [clinics, serviceFilter, onlyVerified, userCoords, radiusMiles]);
 
-  const serviceChips = ["Medical", "Dental", "Mental", "Pediatrics", "Pharmacy", "Vision"];
+  // Service chip keys match Firestore values; display labels come from translations
+  const serviceChipKeys = ["Medical", "Dental", "Mental", "Pediatrics", "Pharmacy", "Vision"] as const;
 
   return (
     <section className="relative min-h-screen px-4 pb-20 pt-20 text-white sm:pb-24 sm:pt-24">
         <div className="mx-auto flex max-w-6xl flex-col gap-10">
           <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div className="max-w-2xl space-y-3">
-              <h1 className="text-3xl font-semibold">Clinic Finder</h1>
+              <h1 className="text-3xl font-semibold">{t.finder.title}</h1>
               <p className="text-sm text-white/75">
-                Enter an address or share your location to surface free and low-cost clinics. Every result includes our latest notes on eligibility, languages, and transportation support.
+                {t.finder.subtitle}
               </p>
             </div>
             <div className="inline-flex items-center gap-3 rounded-full border border-white/30 bg-white/10 px-4 py-2 text-xs uppercase tracking-[0.3em] text-white/70">
-              Updated weekly by volunteers
+              {t.finder.updatedWeekly}
             </div>
           </header>
 
@@ -217,15 +220,15 @@ export default function FinderPage() {
                   }}
                   onFocus={() => setOpenDrop(true)}
                   className="w-full rounded-2xl border border-slate-200/80 bg-white px-4 py-3 text-slate-900 shadow-inner shadow-white/40 outline-none transition focus:ring-2 focus:ring-emerald-400"
-                  placeholder="Enter address, landmark, or city"
+                  placeholder={t.finder.searchPlaceholder}
                 />
                 {openDrop && (
                   <div className="absolute z-20 mt-2 w-full max-h-64 overflow-auto rounded-2xl border border-slate-200/70 bg-white shadow-xl">
                     {loadingDrop && (
-                      <div className="px-3 py-2 text-sm text-slate-500">Searching…</div>
+                      <div className="px-3 py-2 text-sm text-slate-500">{t.finder.searching}</div>
                     )}
                     {!loadingDrop && suggestions.length === 0 && debouncedQ.length >= 3 && (
-                      <div className="px-3 py-2 text-sm text-slate-500">No matches</div>
+                      <div className="px-3 py-2 text-sm text-slate-500">{t.finder.noMatches}</div>
                     )}
                     {suggestions.map((s, i) => (
                       <button
@@ -239,7 +242,7 @@ export default function FinderPage() {
                   </div>
                 )}
                 <p className="mt-2 text-xs text-slate-500">
-                  Example: "Detroit Mercy Dental" or "48202"
+                  {t.finder.searchExample}
                 </p>
               </div>
 
@@ -250,7 +253,7 @@ export default function FinderPage() {
                     onClick={useMyLocation}
                     className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-emerald-400 to-cyan-400 px-5 py-2.5 text-sm font-semibold text-slate-900 shadow-lg shadow-cyan-500/20 transition hover:from-emerald-300 hover:to-cyan-300"
                   >
-                    Use my location
+                    {t.finder.useMyLocation}
                   </button>
                   <select
                     value={radiusMiles}
@@ -271,19 +274,20 @@ export default function FinderPage() {
                       onChange={() => setOnlyVerified((v) => !v)}
                       className="h-3.5 w-3.5 accent-emerald-500"
                     />
-                    Verified only
+                    {t.finder.verifiedOnly}
                   </label>
                 </div>
                 <div className="rounded-2xl border border-emerald-200/60 bg-emerald-50/70 px-4 py-3 text-xs text-emerald-700">
-                  Tip: If you are searching for someone else, add their city or zip and keep the phone number ready in case the clinic needs verbal consent.
+                  {t.finder.tip}
                 </div>
               </div>
             </div>
 
             {/* Service chips */}
             <div className="relative mt-6 flex gap-2 overflow-x-auto pb-1">
-              {serviceChips.map((chip) => {
+              {serviceChipKeys.map((chip) => {
                 const activeChip = serviceFilter.toLowerCase() === chip.toLowerCase();
+                const chipLabel = t.finder.serviceChips[chip] ?? chip;
                 return (
                   <button
                     key={chip}
@@ -294,7 +298,7 @@ export default function FinderPage() {
                         : "border border-slate-200/80 bg-white text-slate-600 shadow-sm hover:border-emerald-200 hover:text-slate-900"
                     }`}
                   >
-                    {chip}
+                    {chipLabel}
                   </button>
                 );
               })}
@@ -303,7 +307,7 @@ export default function FinderPage() {
                   onClick={() => setServiceFilter("")}
                   className="rounded-full border border-slate-200/80 bg-white px-4 py-2 text-sm font-medium text-slate-600 shadow-sm transition hover:border-rose-200 hover:text-rose-500"
                 >
-                  Clear filter
+                  {t.finder.clearFilter}
                 </button>
               )}
             </div>
@@ -315,15 +319,19 @@ export default function FinderPage() {
               <div className="app-surface flex h-full flex-col overflow-hidden">
                 <div className="flex flex-wrap items-start justify-between gap-4 border-b border-slate-200/50 bg-slate-50/70 px-5 py-4 text-slate-900 sm:px-6">
                   <div>
-                    <h2 className="text-lg font-semibold text-slate-900">Map overview</h2>
+                    <h2 className="text-lg font-semibold text-slate-900">{t.finder.mapOverview}</h2>
                     <p className="mt-1 text-xs text-slate-500">
                       {visibleClinics.length > 0
-                        ? `Showing ${visibleClinics.length} ${visibleClinics.length === 1 ? "clinic" : "clinics"} within ${radiusMiles} miles.`
-                        : `No clinics within ${radiusMiles} miles yet—try widening the radius.`}
+                        ? tpl(t.finder.showingClinics, {
+                            count: visibleClinics.length,
+                            clinicWord: visibleClinics.length === 1 ? t.finder.clinic : t.finder.clinics,
+                            radius: radiusMiles,
+                          })
+                        : tpl(t.finder.noClinicsInRadius, { radius: radiusMiles })}
                     </p>
                   </div>
                   <div className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.25em] text-white">
-                    {address ? "Searching: " + address : "Using current location"}
+                    {address ? t.finder.searchingLabel + address : t.finder.usingCurrentLocation}
                   </div>
                 </div>
                 <div className="relative flex-1 min-h-[360px] p-3 sm:min-h-[440px] sm:p-4">
@@ -347,12 +355,12 @@ export default function FinderPage() {
             </div>
           ) : (
             <div className="app-surface px-8 py-12 text-center text-slate-600">
-              <h2 className="text-lg font-semibold text-slate-900">Let’s find the right clinic</h2>
+              <h2 className="text-lg font-semibold text-slate-900">{t.finder.letsFind}</h2>
               <p className="mt-2 text-sm text-slate-600">
-                Enter an address above or press “Use my location” to unlock nearby options.
+                {t.finder.enterAddress}
               </p>
               <p className="mt-4 text-xs uppercase tracking-[0.35em] text-slate-400">
-                No appointment requests are sent until you choose a clinic.
+                {t.finder.noRequestsSent}
               </p>
             </div>
           )}

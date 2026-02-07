@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { useAuth } from "@/components/AuthProvider";
+import { useLang } from "@/i18n/LangProvider";
 import { useEffect, useMemo, useState } from "react";
 
 const ALLOW = (process.env.NEXT_PUBLIC_ADMIN_ALLOWLIST || "")
@@ -22,14 +23,15 @@ export default function NavBar() {
   const pathname = usePathname();
   const router = useRouter();
   const { user, loading } = useAuth();
+  const { lang, setLang, t } = useLang();
   const [busy, setBusy] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
   const links = [
-    { href: "/", label: "Home" },
-    { href: "/finder", label: "Clinic Finder" },
-    { href: "/what-to-bring", label: "What to Bring" },
-    { href: "/mission", label: "Mission" },
+    { href: "/", label: t.nav.home },
+    { href: "/finder", label: t.nav.clinicFinder },
+    { href: "/what-to-bring", label: t.nav.whatToBring },
+    { href: "/mission", label: t.nav.mission },
   ];
 
   const active = (href: string) =>
@@ -37,7 +39,7 @@ export default function NavBar() {
 
   const showAdmin = useMemo(() => isAllowlisted(user?.email), [user]);
   const navItems = showAdmin
-    ? [...links, { href: "/admin", label: "Admin" }]
+    ? [...links, { href: "/admin", label: t.nav.admin }]
     : links;
 
   useEffect(() => {
@@ -60,6 +62,10 @@ export default function NavBar() {
     }
   }
 
+  function toggleLang() {
+    setLang(lang === "en" ? "es" : "en");
+  }
+
   return (
     <header className="sticky top-0 z-50 w-full border-b border-white/30 bg-white/10 backdrop-blur-xl">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
@@ -80,7 +86,7 @@ export default function NavBar() {
           <div className="flex flex-col">
             <span className="text-sm font-semibold leading-tight">ZB Impact</span>
             <span className="text-[11px] uppercase tracking-[0.3em] text-white/60">
-              Clinic access network
+              {t.nav.clinicAccessNetwork}
             </span>
           </div>
         </Link>
@@ -104,6 +110,14 @@ export default function NavBar() {
               );
             })}
 
+            <button
+              onClick={toggleLang}
+              className="rounded-full border border-white/30 px-3 py-1.5 text-xs font-semibold text-white transition hover:border-white/50 hover:bg-white/10"
+              aria-label={lang === "en" ? "Switch to Spanish" : "Cambiar a inglés"}
+            >
+              {lang === "en" ? "Español" : "English"}
+            </button>
+
             {!loading && (
               <div className="ml-2">
                 {user ? (
@@ -112,7 +126,7 @@ export default function NavBar() {
                     disabled={busy}
                     className="group relative overflow-hidden rounded-full border border-white/30 px-4 py-1.5 text-sm text-white transition hover:border-white/50 hover:bg-white/10 disabled:opacity-60"
                   >
-                    <span className="relative z-10">{busy ? "Signing out…" : "Sign out"}</span>
+                    <span className="relative z-10">{busy ? t.nav.signingOut : t.nav.signOut}</span>
                     <span
                       aria-hidden
                       className="absolute inset-0 -z-10 bg-gradient-to-r from-emerald-400/30 to-cyan-400/30 opacity-0 transition group-hover:opacity-100"
@@ -123,7 +137,7 @@ export default function NavBar() {
                     href="/login"
                     className="rounded-full bg-gradient-to-r from-emerald-400/80 to-cyan-400/80 px-4 py-1.5 text-sm font-semibold text-slate-900 shadow-lg shadow-cyan-500/20 transition hover:from-emerald-300 hover:to-cyan-300"
                   >
-                    Log in
+                    {t.nav.logIn}
                   </Link>
                 )}
               </div>
@@ -184,6 +198,13 @@ export default function NavBar() {
             );
           })}
 
+          <button
+            onClick={toggleLang}
+            className="w-full rounded-2xl border border-white/20 bg-white/10 px-4 py-2 text-left text-sm text-white transition hover:border-white/40 hover:bg-white/20"
+          >
+            {lang === "en" ? "Español" : "English"}
+          </button>
+
           {!loading && (
             <div className="pt-2">
               {user ? (
@@ -192,14 +213,14 @@ export default function NavBar() {
                   disabled={busy}
                   className="w-full rounded-2xl border border-white/20 bg-white/10 px-4 py-2 text-left text-sm text-white transition hover:border-white/40 hover:bg-white/20 disabled:opacity-60"
                 >
-                  {busy ? "Signing out…" : "Sign out"}
+                  {busy ? t.nav.signingOut : t.nav.signOut}
                 </button>
               ) : (
                 <Link
                   href="/login"
                   className="block rounded-2xl border border-white/20 bg-gradient-to-r from-emerald-400/80 to-cyan-400/80 px-4 py-2 text-center text-sm font-semibold text-slate-900 shadow-lg shadow-cyan-500/20"
                 >
-                  Log in
+                  {t.nav.logIn}
                 </Link>
               )}
             </div>

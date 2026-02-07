@@ -9,6 +9,7 @@ import L, {
 } from 'leaflet';
 import { useEffect, useMemo, useRef } from 'react';
 import { useMap } from 'react-leaflet';
+import { useLang } from '@/i18n/LangProvider';
 
 const MapContainer = dynamic(() => import('react-leaflet').then(m => m.MapContainer), { ssr: false });
 const TileLayer     = dynamic(() => import('react-leaflet').then(m => m.TileLayer),     { ssr: false });
@@ -117,6 +118,7 @@ export default function ClinicMap({
   selectedClinicId?: string | null;
 }) {
   const center: LatLngExpression = [42.3, -83.04];
+  const { t } = useLang();
 
   // marker icon cache
   const iconFor = useMemo(() => {
@@ -154,8 +156,8 @@ export default function ClinicMap({
 
   const scheduleClose = (id: string, marker: L.Marker) => {
     clearClose(id);
-    const t = setTimeout(() => marker.closePopup(), 250);
-    closeTimers.current.set(id, t);
+    const timer = setTimeout(() => marker.closePopup(), 250);
+    closeTimers.current.set(id, timer);
   };
 
   const onMarkerMouseOver = (id: string, e: LeafletMouseEvent) => {
@@ -210,7 +212,7 @@ export default function ClinicMap({
         {userCoords && (
           <>
             <Marker position={[userCoords[0], userCoords[1]]} icon={houseIcon()}>
-              <Popup>Your location</Popup>
+              <Popup>{t.results.yourLocation}</Popup>
             </Marker>
             {!!radiusMiles && (
               <Circle
@@ -252,13 +254,13 @@ export default function ClinicMap({
                       <div className="text-sm font-semibold text-slate-900">{c.name}</div>
                       {Number.isFinite(c.miles) && c.miles !== Infinity && (
                         <div className="mt-1 text-xs uppercase tracking-wide text-slate-500">
-                          {(c.miles as number).toFixed((c.miles as number) < 10 ? 1 : 0)} miles away
+                          {(c.miles as number).toFixed((c.miles as number) < 10 ? 1 : 0)} {t.results.milesAway}
                         </div>
                       )}
                     </div>
                     {c.verified && (
                       <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-emerald-700">
-                        <span aria-hidden>✔</span> Verified
+                        <span aria-hidden>&#10004;</span> {t.results.verified}
                       </span>
                     )}
                   </div>
@@ -275,7 +277,7 @@ export default function ClinicMap({
                       ))}
                       {c.services.length > 3 && (
                         <span className="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-medium uppercase tracking-wide text-slate-500">
-                          +{c.services.length - 3} more
+                          +{c.services.length - 3} {t.results.more}
                         </span>
                       )}
                     </div>
@@ -285,7 +287,7 @@ export default function ClinicMap({
                       className="inline-flex items-center gap-1 rounded-full bg-slate-900 px-3 py-1.5 text-white transition hover:bg-slate-800"
                       href={detailsPath}
                     >
-                      View details <span aria-hidden>→</span>
+                      {t.results.viewDetails} <span aria-hidden>&rarr;</span>
                     </a>
                     {!!c.url && (
                       <a
@@ -294,7 +296,7 @@ export default function ClinicMap({
                         rel="noreferrer"
                         href={c.url}
                       >
-                        Website
+                        {t.results.website}
                       </a>
                     )}
                     <a
@@ -303,7 +305,7 @@ export default function ClinicMap({
                       rel="noreferrer"
                       href={gmaps}
                     >
-                      Directions
+                      {t.results.directions}
                     </a>
                   </div>
                 </div>

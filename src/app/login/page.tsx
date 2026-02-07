@@ -12,6 +12,7 @@ import {
   onAuthStateChanged,
 } from "firebase/auth";
 import { auth } from "@/lib/firebase";
+import { useLang } from "@/i18n/LangProvider";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -19,6 +20,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [pass, setPass] = useState("");
   const [msg, setMsg] = useState("");
+  const { t } = useLang();
 
   // Keep users signed in across tabs/sessions
   useEffect(() => {
@@ -82,17 +84,17 @@ export default function LoginPage() {
     <main className="flex min-h-screen items-center justify-center px-4 pb-20 pt-20 text-white sm:pb-24 sm:pt-24">
       <div className="glass-panel w-full max-w-md p-6 text-slate-900 sm:p-8">
         <h1 className="text-center text-2xl font-semibold text-slate-900">
-          {mode === "login" ? "Log in" : "Create your account"}
+          {mode === "login" ? t.login.logIn : t.login.createAccount}
         </h1>
         <p className="mt-2 text-center text-sm text-slate-600">
-          Volunteer admins use this portal to keep clinics accurate and compassionate.
+          {t.login.subtitle}
         </p>
 
         <form onSubmit={submit} className="mt-6 space-y-4">
           <input
             type="email"
             className="w-full rounded-2xl border border-slate-200/80 bg-white px-4 py-2.5 text-slate-900 shadow-inner shadow-white/40 outline-none focus:ring-2 focus:ring-emerald-400"
-            placeholder="Email"
+            placeholder={t.login.emailPlaceholder}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             autoComplete="email"
@@ -101,7 +103,7 @@ export default function LoginPage() {
           <input
             type="password"
             className="w-full rounded-2xl border border-slate-200/80 bg-white px-4 py-2.5 text-slate-900 shadow-inner shadow-white/40 outline-none focus:ring-2 focus:ring-emerald-400"
-            placeholder="Password"
+            placeholder={t.login.passwordPlaceholder}
             value={pass}
             onChange={(e) => setPass(e.target.value)}
             autoComplete={mode === "login" ? "current-password" : "new-password"}
@@ -109,12 +111,12 @@ export default function LoginPage() {
           />
 
           <button className="w-full rounded-full bg-gradient-to-r from-emerald-300 to-cyan-300 px-4 py-2.5 text-sm font-semibold text-slate-900 shadow-lg shadow-cyan-500/30 transition hover:from-emerald-200 hover:to-cyan-200">
-            {mode === "login" ? "Log in" : "Create account"}
+            {mode === "login" ? t.login.logInButton : t.login.createAccountButton}
           </button>
         </form>
 
         <div className="relative my-6 text-center text-xs text-slate-400">
-          <span className="bg-white px-3">or</span>
+          <span className="bg-white px-3">{t.login.or}</span>
           <div className="absolute left-0 right-0 top-1/2 -z-10 h-px -translate-y-1/2 bg-slate-200" />
         </div>
 
@@ -124,7 +126,7 @@ export default function LoginPage() {
             onClick={signInWithGoogle}
             className="w-full rounded-full border border-slate-200/80 bg-white px-4 py-2.5 text-sm font-medium text-slate-800 transition hover:border-emerald-200 hover:text-slate-900"
           >
-            Continue with Google
+            {t.login.continueWithGoogle}
           </button>
         </div>
 
@@ -136,7 +138,7 @@ export default function LoginPage() {
             onClick={() => setMode(mode === "login" ? "signup" : "login")}
             className="font-semibold text-emerald-700 underline-offset-4 transition hover:text-emerald-600 hover:underline"
           >
-            {mode === "login" ? "Need an account? Sign up" : "Have an account? Log in"}
+            {mode === "login" ? t.login.needAccount : t.login.haveAccount}
           </button>
         </div>
       </div>
