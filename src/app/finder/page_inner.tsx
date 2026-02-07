@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import dynamic from "next/dynamic";
 import { collection, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -68,12 +69,30 @@ export default function FinderPage() {
   const [selectedClinicId, setSelectedClinicId] = useState<string | null>(null);
 
   // Address search state
+  const searchParams = useSearchParams();
   const [address, setAddress] = useState("");
   const [openDrop, setOpenDrop] = useState(false);
   const [loadingDrop, setLoadingDrop] = useState(false);
   const [suggestions, setSuggestions] = useState<Suggest[]>([]);
   const debouncedQ = useDebounced(address, 300);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
+
+  // Auto-fill from ?q= search param (e.g. from homepage quick search)
+  useEffect(() => {
+    const q = searchParams.get("q");
+    if (!q) return;
+    setAddress(q);
+    (async () => {
+      try {
+        const res = await fetch(`/api/geocode?q=${encodeURIComponent(q)}`);
+        const items: Suggest[] = res.ok ? await res.json() : [];
+        if (items.length > 0) {
+          setAddress(items[0].label);
+          setUserCoords([items[0].lat, items[0].lon]);
+        }
+      } catch { /* geocode failed, user can retry manually */ }
+    })();
+  }, [searchParams]);
 
   // Firestore subscribe
   useEffect(() => {

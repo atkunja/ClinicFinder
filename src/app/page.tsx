@@ -1,6 +1,7 @@
 // src/app/page.tsx
 import Link from "next/link";
 import LiveMetrics from "@/components/LiveMetrics";
+import ZipQuickStart from "@/components/ZipQuickStart";
 
 const pathway = [
   {
@@ -116,32 +117,7 @@ export default function HomePage() {
         <div className="flex-1">
           <div className="glass-panel relative mx-auto max-w-md p-6 text-slate-900 sm:p-8">
             <div className="absolute -top-16 right-6 hidden h-32 w-32 rounded-full bg-gradient-to-br from-emerald-300/60 to-cyan-300/20 blur-3xl sm:block" />
-            <h2 className="text-sm font-semibold uppercase tracking-[0.3em] text-slate-600">
-              Concierge support
-            </h2>
-            <p className="mt-3 text-xl font-semibold text-slate-900">
-              Every clinic we list has been verified by a human. Need help booking? Reach our navigators at <span className="font-bold">hello@zbimpact.org</span>.
-            </p>
-            <div className="mt-6 space-y-3 text-sm text-slate-600">
-              <div className="flex items-start gap-3">
-                <span className="mt-1 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
-                  1
-                </span>
-                <span>Answer a few questions about symptoms or concerns.</span>
-              </div>
-              <div className="flex items-start gap-3">
-                <span className="mt-1 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
-                  2
-                </span>
-                <span>We match you with clinics that fit your insurance, language, and transportation needs.</span>
-              </div>
-              <div className="flex items-start gap-3">
-                <span className="mt-1 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
-                  3
-                </span>
-                <span>Leave with a confirmed plan, documents checklist, and directions in minutes.</span>
-              </div>
-            </div>
+            <ZipQuickStart />
           </div>
         </div>
       </section>
