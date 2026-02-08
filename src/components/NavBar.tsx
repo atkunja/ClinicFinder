@@ -118,28 +118,19 @@ export default function NavBar() {
               {lang === "en" ? "Español" : "English"}
             </button>
 
-            {!loading && (
+            {!loading && user && (
               <div className="ml-2">
-                {user ? (
-                  <button
-                    onClick={handleSignOut}
-                    disabled={busy}
-                    className="group relative overflow-hidden rounded-full border border-white/30 px-4 py-1.5 text-sm text-white transition hover:border-white/50 hover:bg-white/10 disabled:opacity-60"
-                  >
-                    <span className="relative z-10">{busy ? t.nav.signingOut : t.nav.signOut}</span>
-                    <span
-                      aria-hidden
-                      className="absolute inset-0 -z-10 bg-gradient-to-r from-emerald-400/30 to-cyan-400/30 opacity-0 transition group-hover:opacity-100"
-                    />
-                  </button>
-                ) : (
-                  <Link
-                    href="/login"
-                    className="rounded-full bg-gradient-to-r from-emerald-400/80 to-cyan-400/80 px-4 py-1.5 text-sm font-semibold text-slate-900 shadow-lg shadow-cyan-500/20 transition hover:from-emerald-300 hover:to-cyan-300"
-                  >
-                    {t.nav.logIn}
-                  </Link>
-                )}
+                <button
+                  onClick={handleSignOut}
+                  disabled={busy}
+                  className="group relative overflow-hidden rounded-full border border-white/30 px-4 py-1.5 text-sm text-white transition hover:border-white/50 hover:bg-white/10 disabled:opacity-60"
+                >
+                  <span className="relative z-10">{busy ? t.nav.signingOut : t.nav.signOut}</span>
+                  <span
+                    aria-hidden
+                    className="absolute inset-0 -z-10 bg-gradient-to-r from-emerald-400/30 to-cyan-400/30 opacity-0 transition group-hover:opacity-100"
+                  />
+                </button>
               </div>
             )}
           </nav>
@@ -205,24 +196,15 @@ export default function NavBar() {
             {lang === "en" ? "Español" : "English"}
           </button>
 
-          {!loading && (
+          {!loading && user && (
             <div className="pt-2">
-              {user ? (
-                <button
-                  onClick={handleSignOut}
-                  disabled={busy}
-                  className="w-full rounded-2xl border border-white/20 bg-white/10 px-4 py-2 text-left text-sm text-white transition hover:border-white/40 hover:bg-white/20 disabled:opacity-60"
-                >
-                  {busy ? t.nav.signingOut : t.nav.signOut}
-                </button>
-              ) : (
-                <Link
-                  href="/login"
-                  className="block rounded-2xl border border-white/20 bg-gradient-to-r from-emerald-400/80 to-cyan-400/80 px-4 py-2 text-center text-sm font-semibold text-slate-900 shadow-lg shadow-cyan-500/20"
-                >
-                  {t.nav.logIn}
-                </Link>
-              )}
+              <button
+                onClick={handleSignOut}
+                disabled={busy}
+                className="w-full rounded-2xl border border-white/20 bg-white/10 px-4 py-2 text-left text-sm text-white transition hover:border-white/40 hover:bg-white/20 disabled:opacity-60"
+              >
+                {busy ? t.nav.signingOut : t.nav.signOut}
+              </button>
             </div>
           )}
         </nav>
