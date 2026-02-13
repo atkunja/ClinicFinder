@@ -69,7 +69,7 @@ export default function AdminPageInner() {
   useEffect(() => {
     const ref = collection(db, "clinics");
     const unsub = onSnapshot(ref, snap => {
-      const rows: Clinic[] = snap.docs.map(d => ({ id: d.id, ...(d.data() as any) }));
+      const rows: Clinic[] = snap.docs.map(d => ({ ...(d.data() as any), id: d.id }));
       setClinics(rows.sort((a,b) => a.name.localeCompare(b.name)));
       setLoading(false);
     }, err => {

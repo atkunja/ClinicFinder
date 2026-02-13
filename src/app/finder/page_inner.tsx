@@ -105,7 +105,7 @@ export default function FinderPage() {
       (snap) => {
         const rows: Clinic[] = snap.docs
           .map((d) => {
-            const raw: any = { id: d.id, ...(d.data() as any) };
+            const raw: any = { ...(d.data() as any), id: d.id };
             const coords = asCoords(raw.coords);
             if (!coords) return null;
             return { ...raw, coords } as Clinic;

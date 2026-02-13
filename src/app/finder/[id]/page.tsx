@@ -112,18 +112,18 @@ export default function ClinicDetailsPage() {
 
         const byDoc = await getDoc(doc(db, "clinics", String(id)));
         if (byDoc.exists()) {
-          data = { id: byDoc.id, ...(byDoc.data() as ClinicDoc) };
+          data = { ...(byDoc.data() as ClinicDoc), id: byDoc.id };
         } else {
           const coll = collection(db, "clinics");
           const bySlug = await getDocs(query(coll, where("slug", "==", String(id)), limit(1)));
           if (!bySlug.empty) {
             const d = bySlug.docs[0];
-            data = { id: d.id, ...(d.data() as ClinicDoc) };
+            data = { ...(d.data() as ClinicDoc), id: d.id };
           } else {
             const byIdField = await getDocs(query(coll, where("id", "==", String(id)), limit(1)));
             if (!byIdField.empty) {
               const d = byIdField.docs[0];
-              data = { id: d.id, ...(d.data() as ClinicDoc) };
+              data = { ...(d.data() as ClinicDoc), id: d.id };
             }
           }
         }
